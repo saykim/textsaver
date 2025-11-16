@@ -2,6 +2,7 @@
   "name": "Text Saver",
   "version": "2.3",
   "description": "Save text snippets with tags and easily access them when needed",
+  "default_locale": "ko",
   "manifest_version": 3,
   "icons": {
     "16": "icons/icon16.png",

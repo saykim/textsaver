@@ -1,0 +1,54 @@
+{
+    "app_name": {
+        "message": "Text Saver",
+        "description": "\uc571 \uc81c\ubaa9"
+    },
+    "app_description": {
+        "message": "\uc800\uc7a5\ud55c \ud14d\uc2a4\ud2b8\ub97c \ud0dc\uadf8\ub85c \uc815\ub9ac\ud558\uace0 \uc5b8\uc81c\ub4e0 \uc27d\uac8c \uaebc\ub0b4 \uc4f0\uc138\uc694.",
+        "description": "\uc6f9\uc2a4\ud1a0\uc5b4 \uc124\uba85"
+    },
+    "import_dialog_message": {
+        "message": "\uae30\uc874\uc5d0 $existing\uac1c\uc758 \ud14d\uc2a4\ud2b8\uac00 \uc800\uc7a5\ub418\uc5b4 \uc788\uc2b5\ub2c8\ub2e4. \uac00\uc838\uc628 $imported\uac1c\uc758 \ud14d\uc2a4\ud2b8\ub97c \uc5b4\ub5bb\uac8c \ucc98\ub9ac\ud560\uae4c\uc694?\n\ud655\uc778: \uae30\uc874 \ub370\uc774\ud130\uc5d0 \ucd94\uac00 | \ucde8\uc18c: \uac00\uc838\uc624\uae30\ub97c \ucde8\uc18c",
+        "description": "\uae30\ubcf8 \uac00\uc838\uc624\uae30 \ub300\ud654",
+        "placeholders": {
+            "existing": {
+                "content": "$1"
+            },
+            "imported": {
+                "content": "$2"
+            }
+        }
+    },
+    "date_missing": {
+        "message": "\ub0a0\uc9dc \uc5c6\uc74c",
+        "description": "\uae30\ubcf8 \ub0a0\uc9dc \uc5c6\uc74c"
+    },
+    "date_invalid": {
+        "message": "\uc798\ubabb\ub41c \ub0a0\uc9dc",
+        "description": "\uc798\ubabb\ub41c \ub0a0\uc9dc \uc548\ub0b4"
+    },
+    "date_error": {
+        "message": "\ub0a0\uc9dc \uc624\ub958",
+        "description": "\ub0a0\uc9dc \uc624\ub958 \uc548\ub0b4"
+    },
+    "auto_label": {
+        "message": "\uc790\ub3d9",
+        "description": "\uc790\ub3d9 \ub77c\ubca8"
+    },
+    "button_edit_mode": {
+        "message": "\uc218\uc815\ud558\uae30",
+        "description": "\uc218\uc815 \ubaa8\ub4dc \ubc84\ud2bc"
+    },
+    "import_cancelled": {
+        "message": "\uac00\uc838\uc624\uae30\ub97c \ucde8\uc18c\ud588\uc2b5\ub2c8\ub2e4.",
+        "description": "\uac00\uc838\uc624\uae30 \ucde8\uc18c \uc548\ub0b4"
+    },
+    "import_button": {
+        "message": "\uac00\uc838\uc624\uae30",
+        "description": "\uac00\uc838\uc624\uae30 \ubc84\ud2bc"
+    },
+    "export_button": {
+        "message": "\ub0b4\ubcf4\ub0b4\uae30",
+        "description": "\ub0b4\ubcf4\ub0b4\uae30 \ubc84\ud2bc"
+    }
+}

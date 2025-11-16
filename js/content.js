@@ -1,10 +1,10 @@
 // This script will handle detecting '//' in input fields,
 // displaying the bookmark search UI, and interacting with the background script.
 
-console.log("Palette Extension: content.js loaded");
+console.log("Text Saver Extension: content.js loaded");
 
 // 전역 변수 (모듈 패턴으로 캡슐화)
-const PaletteContentState = {
+const TextSaverContentState = {
   currentInputElement: null,
   bookmarkSearchUI: null,
   searchResults: [],
@@ -21,8 +21,8 @@ const PaletteContentState = {
   pendingQuery: null
 };
 
-const INPUT_EVENT_FLAG = Symbol('paletteInputHandled');
-const KEYDOWN_EVENT_FLAG = Symbol('paletteKeydownHandled');
+const INPUT_EVENT_FLAG = Symbol('textSaverInputHandled');
+const KEYDOWN_EVENT_FLAG = Symbol('textSaverKeydownHandled');
 
 // 상수
 const DEBOUNCE_DELAY = 280;
@@ -36,7 +36,7 @@ const CONTENT_PREVIEW_LIMIT = 80;
 const SUPPORTED_INPUT_SELECTOR = 'textarea, input[type="text"], input[type="search"], input[type="url"], input[type="email"], input[type="tel"], input[type="password"]';
 const queryResultCache = new Map();
 const PERPLEXITY_CONTROLLER_SELECTOR = 'deepl-input-controller';
-const paletteGlobal = window.__paletteContentHooks || (window.__paletteContentHooks = {
+const textSaverGlobal = window.__textSaverContentHooks || (window.__textSaverContentHooks = {
   attachedControllers: new WeakSet(),
   attachedInputs: new WeakSet(),
   observers: []
@@ -115,7 +115,7 @@ function attachPerplexityInput(controller) {
     return;
   }
 
-  if (paletteGlobal.attachedControllers.has(controller)) {
+  if (textSaverGlobal.attachedControllers.has(controller)) {
     return;
   }
 
@@ -129,16 +129,16 @@ function attachPerplexityInput(controller) {
     return;
   }
 
-  if (paletteGlobal.attachedInputs.has(inputEl)) {
-    paletteGlobal.attachedControllers.add(controller);
+  if (textSaverGlobal.attachedInputs.has(inputEl)) {
+    textSaverGlobal.attachedControllers.add(controller);
     return;
   }
 
   const focusHandler = (event) => {
-    if (!PaletteContentState.autoCompleteEnabled) return;
+    if (!TextSaverContentState.autoCompleteEnabled) return;
     const target = normalizeEditableTarget(event.target);
     if (target) {
-      PaletteContentState.currentInputElement = target;
+      TextSaverContentState.currentInputElement = target;
     }
   };
 
@@ -146,8 +146,8 @@ function attachPerplexityInput(controller) {
   inputEl.addEventListener('keydown', handleKeydownEvent);
   inputEl.addEventListener('focusin', focusHandler, true);
 
-  paletteGlobal.attachedInputs.add(inputEl);
-  paletteGlobal.attachedControllers.add(controller);
+  textSaverGlobal.attachedInputs.add(inputEl);
+  textSaverGlobal.attachedControllers.add(controller);
 }
 
 function initPerplexitySupport() {
@@ -176,10 +176,10 @@ function initPerplexitySupport() {
 
     if (document.body) {
       observer.observe(document.body, { childList: true, subtree: true });
-      paletteGlobal.observers.push(observer);
+      textSaverGlobal.observers.push(observer);
     }
   } catch (error) {
-    console.warn('Palette //: Failed to initialize Perplexity support', error);
+    console.warn('Text Saver //: Failed to initialize Perplexity support', error);
   }
 }
 
@@ -195,9 +195,9 @@ function getElementContentLength(element) {
 function storeCursorOffset(offset, element) {
   if (typeof offset === 'number' && !Number.isNaN(offset)) {
     const length = getElementContentLength(element);
-    PaletteContentState.lastKnownCursorOffset = Math.min(Math.max(offset, 0), length);
+    TextSaverContentState.lastKnownCursorOffset = Math.min(Math.max(offset, 0), length);
   } else {
-    PaletteContentState.lastKnownCursorOffset = null;
+    TextSaverContentState.lastKnownCursorOffset = null;
   }
 }
 
@@ -230,7 +230,7 @@ function safeRuntimeSendMessage(message, callback) {
                   const retryErrorMsg = chrome.runtime.lastError.message || '';
                   if (!retryErrorMsg.includes(BF_CACHE_ERROR_SNIPPET)) {
                     // bfcache 오류가 아닌 경우에만 로그
-                    console.warn('Palette //: Retry failed:', retryErrorMsg);
+                    console.warn('Text Saver //: Retry failed:', retryErrorMsg);
                   }
                   if (callback) callback(null);
                 } else {
@@ -259,7 +259,7 @@ function safeRuntimeSendMessage(message, callback) {
 
     // bfcache 오류가 아닌 경우에만 경고 표시
     if (!isBfCacheError) {
-      console.warn('Palette //: Message send failed, retrying...', errorMessage);
+      console.warn('Text Saver //: Message send failed, retrying...', errorMessage);
       showContextInvalidWarning();
     } else {
       scheduleKeepAliveReconnect();
@@ -272,7 +272,7 @@ function safeRuntimeSendMessage(message, callback) {
           if (chrome.runtime.lastError) {
             const finalErrorMsg = chrome.runtime.lastError.message || '';
             if (!finalErrorMsg.includes(BF_CACHE_ERROR_SNIPPET)) {
-              console.warn('Palette //: Final retry failed:', finalErrorMsg);
+              console.warn('Text Saver //: Final retry failed:', finalErrorMsg);
             }
             if (callback) callback(null);
           } else {
@@ -289,19 +289,19 @@ function safeRuntimeSendMessage(message, callback) {
 
 // 컨텍스트 무효화 경고 표시
 function showContextInvalidWarning() {
-  if (PaletteContentState.contextWarningShown) {
+  if (TextSaverContentState.contextWarningShown) {
     return;
   }
-  PaletteContentState.contextWarningShown = true;
+  TextSaverContentState.contextWarningShown = true;
 
   // 기존 경고가 있다면 제거
-  const existingWarning = document.getElementById('palette-context-warning');
+  const existingWarning = document.getElementById('text-saver-context-warning');
   if (existingWarning) {
     existingWarning.remove();
   }
   
   const warning = document.createElement('div');
-  warning.id = 'palette-context-warning';
+  warning.id = 'text-saver-context-warning';
   warning.style.cssText = `
     position: fixed;
     top: 20px;
@@ -318,7 +318,7 @@ function showContextInvalidWarning() {
     cursor: pointer;
   `;
   warning.innerHTML = `
-          <div style="font-weight: bold; margin-bottom: 4px;">⚠️ Palette 확장 프로그램 오류</div>
+          <div style="font-weight: bold; margin-bottom: 4px;">⚠️ Text Saver 확장 프로그램 오류</div>
     <div style="font-size: 12px; opacity: 0.9;">
       확장 프로그램을 재시작하거나 페이지를 새로고침해주세요.
     </div>
@@ -384,13 +384,13 @@ function ensureKeepAliveConnection() {
   }
 
   try {
-    keepAlivePort = chrome.runtime.connect({ name: 'palette-keepalive' });
+    keepAlivePort = chrome.runtime.connect({ name: 'text-saver-keepalive' });
     keepAlivePort.onDisconnect.addListener(() => {
       keepAlivePort = null;
       scheduleKeepAliveReconnect();
     });
   } catch (error) {
-    console.warn('Palette //: Keep-alive connection failed', error);
+    console.warn('Text Saver //: Keep-alive connection failed', error);
     keepAlivePort = null;
 
     const errorMessage = String(error?.message || '');
@@ -408,8 +408,8 @@ function ensureKeepAliveConnection() {
 
 // 초기 설정 로드
 chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
-  PaletteContentState.autoCompleteEnabled = result.autoCompleteEnabled !== false;
-  console.log('TextSaver //: Initial auto-complete state:', PaletteContentState.autoCompleteEnabled);
+  TextSaverContentState.autoCompleteEnabled = result.autoCompleteEnabled !== false;
+  console.log('TextSaver //: Initial auto-complete state:', TextSaverContentState.autoCompleteEnabled);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -418,11 +418,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 
   const enabled = changes.autoCompleteEnabled.newValue !== false;
-  if (PaletteContentState.autoCompleteEnabled === enabled) {
+  if (TextSaverContentState.autoCompleteEnabled === enabled) {
     return;
   }
 
-  PaletteContentState.autoCompleteEnabled = enabled;
+  TextSaverContentState.autoCompleteEnabled = enabled;
 
   if (!enabled) {
     hideBookmarkSearchUI();
@@ -460,7 +460,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   const handlers = {
     toggleAutoComplete: () => {
-      PaletteContentState.autoCompleteEnabled = request.enabled;
+      TextSaverContentState.autoCompleteEnabled = request.enabled;
       console.log('TextSaver //: Auto-complete toggled to:', request.enabled);
 
       if (!request.enabled) hideBookmarkSearchUI();
@@ -470,18 +470,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     },
 
     getStatus: () => {
-      sendResponse({ enabled: PaletteContentState.autoCompleteEnabled });
+      sendResponse({ enabled: TextSaverContentState.autoCompleteEnabled });
     },
 
     quickToggle: () => {
-      PaletteContentState.autoCompleteEnabled = !PaletteContentState.autoCompleteEnabled;
+      TextSaverContentState.autoCompleteEnabled = !TextSaverContentState.autoCompleteEnabled;
 
-      chrome.storage.sync.set({ autoCompleteEnabled: PaletteContentState.autoCompleteEnabled });
+      chrome.storage.sync.set({ autoCompleteEnabled: TextSaverContentState.autoCompleteEnabled });
 
-      if (!PaletteContentState.autoCompleteEnabled) hideBookmarkSearchUI();
-      showToggleNotification(PaletteContentState.autoCompleteEnabled);
+      if (!TextSaverContentState.autoCompleteEnabled) hideBookmarkSearchUI();
+      showToggleNotification(TextSaverContentState.autoCompleteEnabled);
 
-      sendResponse({ newState: PaletteContentState.autoCompleteEnabled });
+      sendResponse({ newState: TextSaverContentState.autoCompleteEnabled });
     }
   };
 
@@ -496,14 +496,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // 개선된 디바운스 함수
 function debounce(func, delay) {
   return function(...args) {
-    clearTimeout(PaletteContentState.debounceTimer);
-    PaletteContentState.debounceTimer = setTimeout(() => func.apply(this, args), delay);
+    clearTimeout(TextSaverContentState.debounceTimer);
+    TextSaverContentState.debounceTimer = setTimeout(() => func.apply(this, args), delay);
   };
 }
 
 // 검색 함수 (개선된 버전 - 에러 처리 강화)
 function loadDefaultSuggestions(targetElement) {
-  if (!PaletteContentState.autoCompleteEnabled) {
+  if (!TextSaverContentState.autoCompleteEnabled) {
     return;
   }
 
@@ -513,11 +513,11 @@ function loadDefaultSuggestions(targetElement) {
   }
 
   chrome.storage.local.get('savedTexts', (result) => {
-    if (!PaletteContentState.autoCompleteEnabled) {
+    if (!TextSaverContentState.autoCompleteEnabled) {
       return;
     }
 
-    const activeElement = normalizeEditableTarget(PaletteContentState.currentInputElement);
+    const activeElement = normalizeEditableTarget(TextSaverContentState.currentInputElement);
     if (!activeElement || activeElement !== normalizedTarget) {
       return;
     }
@@ -525,11 +525,11 @@ function loadDefaultSuggestions(targetElement) {
     const savedTexts = Array.isArray(result.savedTexts) ? result.savedTexts : [];
 
     if (savedTexts.length === 0) {
-      PaletteContentState.searchResults = [];
-      PaletteContentState.selectedIndex = -1;
-      PaletteContentState.lastQuerySent = null;
-      PaletteContentState.pendingQuery = '';
-      PaletteContentState.lastDisplayedQuery = '';
+      TextSaverContentState.searchResults = [];
+      TextSaverContentState.selectedIndex = -1;
+      TextSaverContentState.lastQuerySent = null;
+      TextSaverContentState.pendingQuery = '';
+      TextSaverContentState.lastDisplayedQuery = '';
       displayBookmarkSearchUI(activeElement, []);
       return;
     }
@@ -570,25 +570,25 @@ function loadDefaultSuggestions(targetElement) {
       suggestions.push(item);
     });
 
-    PaletteContentState.searchResults = suggestions;
-    PaletteContentState.selectedIndex = -1;
-    PaletteContentState.lastQuerySent = null;
-    PaletteContentState.pendingQuery = '';
-    PaletteContentState.lastDisplayedQuery = '';
+    TextSaverContentState.searchResults = suggestions;
+    TextSaverContentState.selectedIndex = -1;
+    TextSaverContentState.lastQuerySent = null;
+    TextSaverContentState.pendingQuery = '';
+    TextSaverContentState.lastDisplayedQuery = '';
 
     displayBookmarkSearchUI(activeElement, suggestions);
   });
 }
 
 const debouncedSearchBookmarks = debounce((rawQuery) => {
-  if (!PaletteContentState.autoCompleteEnabled || !PaletteContentState.currentInputElement) {
+  if (!TextSaverContentState.autoCompleteEnabled || !TextSaverContentState.currentInputElement) {
     return;
   }
 
   if (typeof rawQuery !== 'string') {
-    PaletteContentState.lastQuerySent = null;
-    PaletteContentState.searchResults = [];
-    PaletteContentState.pendingQuery = null;
+    TextSaverContentState.lastQuerySent = null;
+    TextSaverContentState.searchResults = [];
+    TextSaverContentState.pendingQuery = null;
     hideBookmarkSearchUI();
     return;
   }
@@ -596,79 +596,79 @@ const debouncedSearchBookmarks = debounce((rawQuery) => {
   const query = rawQuery.trim();
 
   if (query.length === 0) {
-    PaletteContentState.lastQuerySent = null;
-    PaletteContentState.pendingQuery = '';
-    PaletteContentState.lastDisplayedQuery = '';
-    loadDefaultSuggestions(PaletteContentState.currentInputElement);
+    TextSaverContentState.lastQuerySent = null;
+    TextSaverContentState.pendingQuery = '';
+    TextSaverContentState.lastDisplayedQuery = '';
+    loadDefaultSuggestions(TextSaverContentState.currentInputElement);
     return;
   }
 
-  if (query === PaletteContentState.lastQuerySent) {
+  if (query === TextSaverContentState.lastQuerySent) {
     return;
   }
 
-  PaletteContentState.searchResults = [];
-  PaletteContentState.pendingQuery = query;
+  TextSaverContentState.searchResults = [];
+  TextSaverContentState.pendingQuery = query;
 
   if (queryResultCache.has(query)) {
-    PaletteContentState.searchResults = queryResultCache.get(query);
-    paletteRenderCachedResults(query);
+    TextSaverContentState.searchResults = queryResultCache.get(query);
+    textSaverRenderCachedResults(query);
     return;
   }
 
-  PaletteContentState.lastQuerySent = query;
+  TextSaverContentState.lastQuerySent = query;
   const success = safeRuntimeSendMessage({ action: 'searchItems', query }, (response) => {
     // response가 null이면 에러 발생한 것
     if (response === null) {
-      console.warn('Palette //: Search failed due to extension context error');
-      PaletteContentState.searchResults = [];
-      PaletteContentState.lastQuerySent = null;
+      console.warn('Text Saver //: Search failed due to extension context error');
+      TextSaverContentState.searchResults = [];
+      TextSaverContentState.lastQuerySent = null;
       showContextInvalidWarning();
 
       // 에러 메시지를 UI에 표시
-      if (PaletteContentState.currentInputElement && PaletteContentState.autoCompleteEnabled) {
-        displayBookmarkSearchUI(PaletteContentState.currentInputElement, []);
+      if (TextSaverContentState.currentInputElement && TextSaverContentState.autoCompleteEnabled) {
+        displayBookmarkSearchUI(TextSaverContentState.currentInputElement, []);
       }
       return;
     }
 
     const items = Array.isArray(response?.items) ? response.items : [];
     queryResultCache.set(query, items);
-    PaletteContentState.searchResults = items;
-    PaletteContentState.lastDisplayedQuery = query;
+    TextSaverContentState.searchResults = items;
+    TextSaverContentState.lastDisplayedQuery = query;
     trimQueryCache();
 
-    if (PaletteContentState.contextWarningShown) {
-      const existingWarning = document.getElementById('palette-context-warning');
+    if (TextSaverContentState.contextWarningShown) {
+      const existingWarning = document.getElementById('text-saver-context-warning');
       if (existingWarning) {
         existingWarning.remove();
       }
-      PaletteContentState.contextWarningShown = false;
+      TextSaverContentState.contextWarningShown = false;
     }
 
-    if (PaletteContentState.currentInputElement && PaletteContentState.autoCompleteEnabled) {
-      displayBookmarkSearchUI(PaletteContentState.currentInputElement, PaletteContentState.searchResults);
+    if (TextSaverContentState.currentInputElement && TextSaverContentState.autoCompleteEnabled) {
+      displayBookmarkSearchUI(TextSaverContentState.currentInputElement, TextSaverContentState.searchResults);
     }
   });
 
   if (!success) {
     // 메시지 전송 자체가 실패한 경우 (재시도 중)
-    PaletteContentState.lastQuerySent = null;
-    console.log('Palette //: Search message sending in progress...');
+    TextSaverContentState.lastQuerySent = null;
+    console.log('Text Saver //: Search message sending in progress...');
   }
 }, DEBOUNCE_DELAY);
 
 // displayBookmarkSearchUI 함수 (개선된 버전)
 function displayBookmarkSearchUI(inputElement, items) {
-  if (!PaletteContentState.autoCompleteEnabled || !inputElement) return;
+  if (!TextSaverContentState.autoCompleteEnabled || !inputElement) return;
 
-  if (PaletteContentState.bookmarkSearchUI) {
-    PaletteContentState.bookmarkSearchUI.remove();
+  if (TextSaverContentState.bookmarkSearchUI) {
+    TextSaverContentState.bookmarkSearchUI.remove();
   }
-  PaletteContentState.selectedIndex = -1;
+  TextSaverContentState.selectedIndex = -1;
 
-  PaletteContentState.bookmarkSearchUI = document.createElement('div');
-  PaletteContentState.bookmarkSearchUI.id = 'text-saver-bookmark-search-ui';
+  TextSaverContentState.bookmarkSearchUI = document.createElement('div');
+  TextSaverContentState.bookmarkSearchUI.id = 'text-saver-bookmark-search-ui';
   const ul = document.createElement('ul');
 
   if (items && items.length > 0) {
@@ -715,11 +715,11 @@ function displayBookmarkSearchUI(inputElement, items) {
     ul.appendChild(li);
   }
 
-  PaletteContentState.bookmarkSearchUI.appendChild(ul);
-  document.body.appendChild(PaletteContentState.bookmarkSearchUI);
+  TextSaverContentState.bookmarkSearchUI.appendChild(ul);
+  document.body.appendChild(TextSaverContentState.bookmarkSearchUI);
 
   // 스타일 설정
-  Object.assign(PaletteContentState.bookmarkSearchUI.style, {
+  Object.assign(TextSaverContentState.bookmarkSearchUI.style, {
     position: 'absolute',
     zIndex: '2147483647',
     maxHeight: '200px',
@@ -733,27 +733,27 @@ function displayBookmarkSearchUI(inputElement, items) {
 
   // 이벤트 리스너 최적화 (중복 방지)
   cleanupEventListeners();
-  PaletteContentState.repositionUIBound = () => positionBookmarkSearchUI();
-  PaletteContentState.resizeRepositionBound = () => positionBookmarkSearchUI();
-  window.addEventListener('scroll', PaletteContentState.repositionUIBound, true);
-  window.addEventListener('resize', PaletteContentState.resizeRepositionBound, true);
+  TextSaverContentState.repositionUIBound = () => positionBookmarkSearchUI();
+  TextSaverContentState.resizeRepositionBound = () => positionBookmarkSearchUI();
+  window.addEventListener('scroll', TextSaverContentState.repositionUIBound, true);
+  window.addEventListener('resize', TextSaverContentState.resizeRepositionBound, true);
 }
 
 function hideBookmarkSearchUI() {
-  if (PaletteContentState.bookmarkSearchUI) {
-    PaletteContentState.bookmarkSearchUI.remove();
-    PaletteContentState.bookmarkSearchUI = null;
+  if (TextSaverContentState.bookmarkSearchUI) {
+    TextSaverContentState.bookmarkSearchUI.remove();
+    TextSaverContentState.bookmarkSearchUI = null;
   }
-  PaletteContentState.selectedIndex = -1;
-  PaletteContentState.searchResults = [];
-  PaletteContentState.activeTrigger = null;
-  PaletteContentState.pendingQuery = null;
-  PaletteContentState.lastQuerySent = null;
-  PaletteContentState.lastDisplayedQuery = '';
+  TextSaverContentState.selectedIndex = -1;
+  TextSaverContentState.searchResults = [];
+  TextSaverContentState.activeTrigger = null;
+  TextSaverContentState.pendingQuery = null;
+  TextSaverContentState.lastQuerySent = null;
+  TextSaverContentState.lastDisplayedQuery = '';
   document.removeEventListener('mousedown', handleClickOutside, true);
   cleanupEventListeners();
 
-  const element = normalizeEditableTarget(PaletteContentState.currentInputElement);
+  const element = normalizeEditableTarget(TextSaverContentState.currentInputElement);
   if (!element || !document.contains(element)) {
     return;
   }
@@ -763,11 +763,11 @@ function hideBookmarkSearchUI() {
   }
 
   if (element.isContentEditable) {
-    const offset = PaletteContentState.lastKnownCursorOffset ?? getElementContentLength(element);
+    const offset = TextSaverContentState.lastKnownCursorOffset ?? getElementContentLength(element);
     setCursorPositionContentEditable(element, offset);
   } else {
     const length = getElementContentLength(element);
-    const offset = PaletteContentState.lastKnownCursorOffset ?? length;
+    const offset = TextSaverContentState.lastKnownCursorOffset ?? length;
     const nextOffset = Math.min(Math.max(offset, 0), length);
     element.selectionStart = nextOffset;
     element.selectionEnd = nextOffset;
@@ -781,47 +781,47 @@ function hideBookmarkSearchUI() {
 }
 
 function cleanupEventListeners() {
-  if (PaletteContentState.repositionUIBound) {
-    window.removeEventListener('scroll', PaletteContentState.repositionUIBound, true);
-    PaletteContentState.repositionUIBound = null;
+  if (TextSaverContentState.repositionUIBound) {
+    window.removeEventListener('scroll', TextSaverContentState.repositionUIBound, true);
+    TextSaverContentState.repositionUIBound = null;
   }
-  if (PaletteContentState.resizeRepositionBound) {
-    window.removeEventListener('resize', PaletteContentState.resizeRepositionBound, true);
-    PaletteContentState.resizeRepositionBound = null;
+  if (TextSaverContentState.resizeRepositionBound) {
+    window.removeEventListener('resize', TextSaverContentState.resizeRepositionBound, true);
+    TextSaverContentState.resizeRepositionBound = null;
   }
 }
 
 // selectAndInsertBookmark 함수 (개선된 버전 - 중복 삽입 버그 수정)
 function selectAndInsertBookmark(index) {
-  if (!PaletteContentState.autoCompleteEnabled ||
+  if (!TextSaverContentState.autoCompleteEnabled ||
       index < 0 ||
-      index >= PaletteContentState.searchResults.length) {
-    console.warn('Palette //: selectAndInsertBookmark - Invalid state or index');
+      index >= TextSaverContentState.searchResults.length) {
+    console.warn('Text Saver //: selectAndInsertBookmark - Invalid state or index');
     return;
   }
 
-  const item = PaletteContentState.searchResults[index];
+  const item = TextSaverContentState.searchResults[index];
   if (!item) {
-    console.warn('Palette //: selectAndInsertBookmark - Item not found');
+    console.warn('Text Saver //: selectAndInsertBookmark - Item not found');
     return;
   }
 
-  PaletteContentState.activeTrigger = null;
-  PaletteContentState.pendingQuery = null;
-  PaletteContentState.lastQuerySent = null;
-  PaletteContentState.lastDisplayedQuery = '';
+  TextSaverContentState.activeTrigger = null;
+  TextSaverContentState.pendingQuery = null;
+  TextSaverContentState.lastQuerySent = null;
+  TextSaverContentState.lastDisplayedQuery = '';
 
   const textToInsert = item.content || item.title ||
     (item.sourceURL && !item.content ? `[${item.title || 'link'}](${item.sourceURL})` : '');
 
-  let element = normalizeEditableTarget(PaletteContentState.currentInputElement);
+  let element = normalizeEditableTarget(TextSaverContentState.currentInputElement);
   if (!element || !document.contains(element)) {
-    console.warn('Palette //: No valid input element found for insertion');
+    console.warn('Text Saver //: No valid input element found for insertion');
     hideBookmarkSearchUI();
     return;
   }
 
-  PaletteContentState.currentInputElement = element;
+  TextSaverContentState.currentInputElement = element;
 
   try {
     element.focus({ preventScroll: true });
@@ -841,7 +841,7 @@ function selectAndInsertBookmark(index) {
   let startIndex = match && typeof match.index === 'number' ? match.index : null;
   let endIndex = match ? cursorPos : null;
 
-  const trigger = PaletteContentState.activeTrigger;
+  const trigger = TextSaverContentState.activeTrigger;
   if (trigger && trigger.element === element) {
     startIndex = trigger.startOffset;
     endIndex = trigger.endOffset;
@@ -873,7 +873,7 @@ function selectAndInsertBookmark(index) {
         handled = true;
         syntheticEventNeeded = true;
       } catch (error) {
-        console.error('Palette //: ContentEditable fallback failed:', error);
+        console.error('Text Saver //: ContentEditable fallback failed:', error);
       }
     }
   } else {
@@ -935,7 +935,7 @@ function findTextNodeForContentEditable(element, globalCharOffset) {
 
 function getCursorPositionContentEditable(element) {
   if (!element) {
-    return PaletteContentState.lastKnownCursorOffset ?? 0;
+    return TextSaverContentState.lastKnownCursorOffset ?? 0;
   }
 
   try {
@@ -946,14 +946,14 @@ function getCursorPositionContentEditable(element) {
 
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) {
-    const fallback = PaletteContentState.lastKnownCursorOffset ?? getElementContentLength(element);
+    const fallback = TextSaverContentState.lastKnownCursorOffset ?? getElementContentLength(element);
     storeCursorOffset(fallback, element);
     return fallback;
   }
 
   const range = selection.getRangeAt(0);
   if (!element.contains(range.startContainer)) {
-    const fallback = PaletteContentState.lastKnownCursorOffset ?? getElementContentLength(element);
+    const fallback = TextSaverContentState.lastKnownCursorOffset ?? getElementContentLength(element);
     storeCursorOffset(fallback, element);
     return fallback;
   }
@@ -1064,7 +1064,7 @@ function replaceContentEditableToken(element, currentText, startIndex, endIndex,
     selection.collapseToEnd();
     return { success: true, syntheticEventNeeded: false };
   } catch (error) {
-    console.warn('Palette //: Range replacement failed, applying manual fallback.', error);
+    console.warn('Text Saver //: Range replacement failed, applying manual fallback.', error);
     return { success: false, syntheticEventNeeded: true };
   }
 }
@@ -1158,24 +1158,24 @@ function dispatchSyntheticInputEvents(element, insertedText) {
 }
 
 function updateSelectionVisuals() {
-  if (!PaletteContentState.bookmarkSearchUI) return;
-  const items = PaletteContentState.bookmarkSearchUI.querySelectorAll('ul li');
+  if (!TextSaverContentState.bookmarkSearchUI) return;
+  const items = TextSaverContentState.bookmarkSearchUI.querySelectorAll('ul li');
   items.forEach((item, idx) => {
-    item.classList.toggle('selected', idx === PaletteContentState.selectedIndex);
-    if (idx === PaletteContentState.selectedIndex) item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    item.classList.toggle('selected', idx === TextSaverContentState.selectedIndex);
+    if (idx === TextSaverContentState.selectedIndex) item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
 }
 
 // 입력창 위치에 따라 자동완성 UI를 위/아래로 배치
 function positionBookmarkSearchUI() {
-  if (!PaletteContentState.bookmarkSearchUI || !PaletteContentState.currentInputElement) return;
+  if (!TextSaverContentState.bookmarkSearchUI || !TextSaverContentState.currentInputElement) return;
 
-  const rect = PaletteContentState.currentInputElement.getBoundingClientRect();
+  const rect = TextSaverContentState.currentInputElement.getBoundingClientRect();
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
 
   // UI 실제 높이 계산 (maxHeight 고려)
-  const desiredHeight = Math.min(PaletteContentState.bookmarkSearchUI.scrollHeight, 200);
+  const desiredHeight = Math.min(TextSaverContentState.bookmarkSearchUI.scrollHeight, 200);
   const spaceBelow = viewportHeight - rect.bottom;
   const spaceAbove = rect.top;
 
@@ -1188,23 +1188,23 @@ function positionBookmarkSearchUI() {
 
   // 수평 위치 (좌우 화면 밖으로 나가지 않도록 보정)
   // 최소 너비는 입력창 너비, 실제 UI 너비 측정 후 보정
-  const uiWidth = Math.max(PaletteContentState.bookmarkSearchUI.offsetWidth, rect.width);
+  const uiWidth = Math.max(TextSaverContentState.bookmarkSearchUI.offsetWidth, rect.width);
   let left = window.scrollX + rect.left;
   const minLeft = window.scrollX + 4;
   const maxLeft = window.scrollX + viewportWidth - uiWidth - 4;
   if (left < minLeft) left = minLeft;
   if (left > maxLeft) left = Math.max(minLeft, maxLeft);
 
-  PaletteContentState.bookmarkSearchUI.style.top = `${top}px`;
-  PaletteContentState.bookmarkSearchUI.style.left = `${left}px`;
-  PaletteContentState.bookmarkSearchUI.dataset.placement = shouldPlaceAbove ? 'above' : 'below';
+  TextSaverContentState.bookmarkSearchUI.style.top = `${top}px`;
+  TextSaverContentState.bookmarkSearchUI.style.left = `${left}px`;
+  TextSaverContentState.bookmarkSearchUI.dataset.placement = shouldPlaceAbove ? 'above' : 'below';
 }
 
-function paletteRenderCachedResults(query) {
-  PaletteContentState.lastDisplayedQuery = query;
-  PaletteContentState.pendingQuery = query;
-  if (PaletteContentState.currentInputElement && PaletteContentState.autoCompleteEnabled) {
-    displayBookmarkSearchUI(PaletteContentState.currentInputElement, PaletteContentState.searchResults);
+function textSaverRenderCachedResults(query) {
+  TextSaverContentState.lastDisplayedQuery = query;
+  TextSaverContentState.pendingQuery = query;
+  if (TextSaverContentState.currentInputElement && TextSaverContentState.autoCompleteEnabled) {
+    displayBookmarkSearchUI(TextSaverContentState.currentInputElement, TextSaverContentState.searchResults);
   }
 }
 
@@ -1216,7 +1216,7 @@ function trimQueryCache() {
   const keys = queryResultCache.keys();
   while (queryResultCache.size > MAX_CACHED_RESULTS) {
     const keyToDelete = keys.next().value;
-    if (keyToDelete === PaletteContentState.lastDisplayedQuery) {
+    if (keyToDelete === TextSaverContentState.lastDisplayedQuery) {
       continue;
     }
     queryResultCache.delete(keyToDelete);
@@ -1225,7 +1225,7 @@ function trimQueryCache() {
 
 // Input 이벤트 핸들러 (메인 로직)
 function handleInputEvent(event) {
-  if (!PaletteContentState.autoCompleteEnabled) return;
+  if (!TextSaverContentState.autoCompleteEnabled) return;
   if (!event) return;
   if (event[INPUT_EVENT_FLAG]) return;
   event[INPUT_EVENT_FLAG] = true;
@@ -1241,11 +1241,11 @@ function handleInputEvent(event) {
     return;
   }
 
-  PaletteContentState.currentInputElement = target;
+  TextSaverContentState.currentInputElement = target;
   const insertedData = typeof event.data === 'string' ? event.data : '';
-  const shouldCheckForTrigger = insertedData.includes('/') || insertedData === '' || !!PaletteContentState.activeTrigger;
+  const shouldCheckForTrigger = insertedData.includes('/') || insertedData === '' || !!TextSaverContentState.activeTrigger;
   if (!shouldCheckForTrigger) {
-    PaletteContentState.pendingQuery = null;
+    TextSaverContentState.pendingQuery = null;
     return;
   }
 
@@ -1261,55 +1261,55 @@ function handleInputEvent(event) {
 
   if (match) {
     const query = match[1];
-    PaletteContentState.activeTrigger = {
+    TextSaverContentState.activeTrigger = {
       element: target,
       startOffset: match.index,
       endOffset: cursorPos
     };
-    PaletteContentState.pendingQuery = query;
+    TextSaverContentState.pendingQuery = query;
     debouncedSearchBookmarks(query);
   } else {
-    PaletteContentState.activeTrigger = null;
-    PaletteContentState.pendingQuery = null;
+    TextSaverContentState.activeTrigger = null;
+    TextSaverContentState.pendingQuery = null;
     hideBookmarkSearchUI();
   }
 }
 
 // 키보드 이벤트 핸들러 (UI 네비게이션 및 선택/닫기)
 function handleKeydownEvent(event) {
-  if (!PaletteContentState.autoCompleteEnabled) return; // 비활성화 시 조기 종료
-  if (!PaletteContentState.bookmarkSearchUI) return; // UI 없으면 아무것도 안함
+  if (!TextSaverContentState.autoCompleteEnabled) return; // 비활성화 시 조기 종료
+  if (!TextSaverContentState.bookmarkSearchUI) return; // UI 없으면 아무것도 안함
   if (!event) return;
   if (event[KEYDOWN_EVENT_FLAG]) return;
   event[KEYDOWN_EVENT_FLAG] = true;
 
-  const currentElement = normalizeEditableTarget(PaletteContentState.currentInputElement);
+  const currentElement = normalizeEditableTarget(TextSaverContentState.currentInputElement);
   if (!currentElement || !document.contains(currentElement)) {
     hideBookmarkSearchUI();
     return;
   }
 
-  PaletteContentState.currentInputElement = currentElement;
+  TextSaverContentState.currentInputElement = currentElement;
 
-  if (PaletteContentState.searchResults.length > 0) {
+  if (TextSaverContentState.searchResults.length > 0) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      PaletteContentState.selectedIndex = (PaletteContentState.selectedIndex + 1) % PaletteContentState.searchResults.length;
+      TextSaverContentState.selectedIndex = (TextSaverContentState.selectedIndex + 1) % TextSaverContentState.searchResults.length;
       updateSelectionVisuals();
       return;
     }
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      PaletteContentState.selectedIndex = (PaletteContentState.selectedIndex - 1 + PaletteContentState.searchResults.length) % PaletteContentState.searchResults.length;
+      TextSaverContentState.selectedIndex = (TextSaverContentState.selectedIndex - 1 + TextSaverContentState.searchResults.length) % TextSaverContentState.searchResults.length;
       updateSelectionVisuals();
       return;
     }
   }
 
   if (event.key === 'Enter') {
-    if (PaletteContentState.selectedIndex !== -1 && PaletteContentState.searchResults.length > 0) {
+    if (TextSaverContentState.selectedIndex !== -1 && TextSaverContentState.searchResults.length > 0) {
       event.preventDefault();
-      selectAndInsertBookmark(PaletteContentState.selectedIndex);
+      selectAndInsertBookmark(TextSaverContentState.selectedIndex);
     } else {
       hideBookmarkSearchUI();
     }
@@ -1324,8 +1324,8 @@ function handleKeydownEvent(event) {
 
 // UI 외부 클릭 시 UI 숨기기
 function handleClickOutside(event) {
-  if (!PaletteContentState.autoCompleteEnabled) return; // 비활성화 시 조기 종료
-  if (PaletteContentState.bookmarkSearchUI && !PaletteContentState.bookmarkSearchUI.contains(event.target) && event.target !== PaletteContentState.currentInputElement) {
+  if (!TextSaverContentState.autoCompleteEnabled) return; // 비활성화 시 조기 종료
+  if (TextSaverContentState.bookmarkSearchUI && !TextSaverContentState.bookmarkSearchUI.contains(event.target) && event.target !== TextSaverContentState.currentInputElement) {
     hideBookmarkSearchUI();
   }
 }
@@ -1359,7 +1359,7 @@ function showToggleNotification(enabled) {
   `;
   
   const icon = enabled ? '✓' : '✗';
-  const message = enabled ? 'Palette // 자동완성 활성화' : 'Palette // 자동완성 비활성화';
+  const message = enabled ? 'Text Saver // 자동완성 활성화' : 'Text Saver // 자동완성 비활성화';
   
   // XSS 방지: innerHTML 대신 안전한 DOM 조작 사용
   const iconSpan = document.createElement('span');
@@ -1395,10 +1395,10 @@ function showToggleNotification(enabled) {
 document.addEventListener('input', handleInputEvent);
 document.addEventListener('keydown', handleKeydownEvent); // keydown 리스너는 displayBookmarkSearchUI에서 동적으로 추가/제거하는 대신 항상 유지
 document.addEventListener('focusin', (event) => {
-  if (!PaletteContentState.autoCompleteEnabled) return;
+  if (!TextSaverContentState.autoCompleteEnabled) return;
   const target = normalizeEditableTarget(event.target);
   if (target) {
-    PaletteContentState.currentInputElement = target;
+    TextSaverContentState.currentInputElement = target;
   }
 });
 

@@ -19,6 +19,19 @@ let autoSaveTimer = null;
 let autoCompleteToggle = null;
 let featureStatusText = null;
 let inAppNotification = null;
+const detectedLocale = (chrome?.i18n?.getUILanguage?.() || navigator.language || 'ko').toLowerCase();
+const isKoreanLocale = detectedLocale.startsWith('ko');
+const useEnglishLocale = !isKoreanLocale && !!(chrome?.i18n?.getMessage);
+
+function getLocaleMessage(key, fallback, substitutions = []) {
+  if (!useEnglishLocale) return fallback;
+  try {
+    const msg = chrome.i18n.getMessage(key, substitutions);
+    return msg || fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
 
 // 보안: 입력 검증 및 Sanitization 함수들
 function sanitizeText(input) {
@@ -76,12 +89,83 @@ function validateTextData(data) {
   return true;
 }
 
+function applyLocaleText() {
+  if (!useEnglishLocale) return;
+  const textMap = [
+    { selector: '#saveTabBtn .tab-label', key: 'tab_save_label' },
+    { selector: '#viewTabBtn .tab-label', key: 'tab_view_label' },
+    { selector: '#bookmarkTabBtn .tab-label', key: 'tab_bookmark_label' },
+    { selector: '#settingsTabBtn .tab-label', key: 'tab_settings_label' },
+    { selector: '#saveBtn .btn-content span', key: 'button_save' },
+    { selector: '#bookmarkTab .section-header h3', key: 'bookmark_section_title' },
+    { selector: '#bookmarkTab .section-header p', key: 'bookmark_section_desc' },
+    { selector: '#emptyBookmarkMessage h4', key: 'bookmark_empty_title' },
+    { selector: '#emptyBookmarkMessage p', key: 'bookmark_empty_desc' },
+    { selector: '#settingsTab .settings-section:nth-of-type(1) .header-title', key: 'settings_feature_title' },
+    { selector: '#settingsTab .settings-section:nth-of-type(1) .header-description', key: 'settings_feature_desc' },
+    { selector: '#settingsTab .settings-section:nth-of-type(1) .setting-info h4', key: 'toggle_label' },
+    { selector: '#settingsTab .settings-section:nth-of-type(1) .setting-info p', key: 'toggle_desc' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .header-title', key: 'data_section_title' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .header-description', key: 'data_section_desc' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(1) .setting-info h4', key: 'import_title' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(1) .setting-info p', key: 'import_desc' },
+    { selector: '#importBrowseBtn span', key: 'import_button' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(2) .setting-info h4', key: 'export_title' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(2) .setting-info p', key: 'export_desc' },
+    { selector: '#exportBtn span', key: 'export_button' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(3) .setting-info h4', key: 'restore_presets_title' },
+    { selector: '#settingsTab .settings-section:nth-of-type(2) .setting-item:nth-of-type(3) .setting-info p', key: 'restore_presets_desc' },
+    { selector: '#restorePresetsBtn span', key: 'restore_presets_button' },
+    { selector: '.settings-card.danger .setting-info h4', key: 'reset_title' },
+    { selector: '.settings-card.danger .setting-info p', key: 'reset_desc' },
+    { selector: '#resetDataBtn span', key: 'reset_button' }
+  ];
+  textMap.forEach(({ selector, key }) => {
+    const el = document.querySelector(selector);
+    if (el) {
+      el.textContent = getLocaleMessage(key, el.textContent);
+    }
+  });
+
+  const placeholders = [
+    { input: '#titleInput', key: 'placeholder_title' },
+    { input: '#textInput', key: 'placeholder_content' },
+    { input: '#tagInput', key: 'placeholder_tags' },
+    { input: '#searchInput', key: 'placeholder_search' }
+  ];
+  placeholders.forEach(({ input, key }) => {
+    const element = document.querySelector(input);
+    if (!element) return;
+    const label = element.closest('.input-wrapper')?.querySelector('.floating-label');
+    if (label) {
+      label.textContent = getLocaleMessage(key, label.textContent);
+    }
+  });
+
+  const searchOptions = [
+    { selector: 'label[for="searchTitle"] .checkbox-label', key: 'search_option_title' },
+    { selector: 'label[for="searchContent"] .checkbox-label', key: 'search_option_content' },
+    { selector: 'label[for="searchTags"] .checkbox-label', key: 'search_option_tags' }
+  ];
+  searchOptions.forEach(({ selector, key }) => {
+    const el = document.querySelector(selector);
+    if (el) {
+      el.textContent = getLocaleMessage(key, el.textContent);
+    }
+  });
+
+  const statusEl = document.getElementById('featureStatusText');
+  if (statusEl) {
+    statusEl.textContent = `${getLocaleMessage('feature_status_prefix', '기능 상태:')} ${getLocaleMessage('feature_status_enabled', '활성화됨')}`;
+  }
+}
+
 // 날짜 포맷 함수 (전역으로 이동)
 function formatDate(dateString) {
-  if (!dateString) return '날짜 없음';
+  if (!dateString) return getLocaleMessage('date_missing', '날짜 없음');
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '잘못된 날짜';
+    if (isNaN(date.getTime())) return getLocaleMessage('date_invalid', '잘못된 날짜');
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -90,7 +174,7 @@ function formatDate(dateString) {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   } catch (error) {
     console.error('날짜 포맷 오류:', error);
-    return '날짜 오류';
+    return getLocaleMessage('date_error', '날짜 오류');
   }
 }
 
@@ -230,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const importResult = document.getElementById('importResult');
   const restorePresetsBtn = document.getElementById('restorePresetsBtn');
   const resetDataBtn = document.getElementById('resetDataBtn');
+  applyLocaleText();
   
   // Auto-complete toggle 관련 요소 (전역 변수 초기화)
   autoCompleteToggle = document.getElementById('autoCompleteToggle');
@@ -243,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   statusDot.className = 'status-dot';
   const statusText = document.createElement('span');
   statusText.className = 'status-text';
-  statusText.textContent = '자동 저장 준비됨';
+  statusText.textContent = getLocaleMessage('auto_save_ready', '자동 저장 준비됨');
   autoSaveStatus.appendChild(statusDot);
   autoSaveStatus.appendChild(statusText);
   // Save 버튼 바로 뒤에 자동 저장 상태 표시 추가
@@ -307,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 새로운 HTML 구조에 맞게 버튼 텍스트 업데이트
     const btnText = saveBtn.querySelector('.btn-content span');
     if (btnText) {
-      btnText.textContent = '저장하기';
+      btnText.textContent = getLocaleMessage('button_save', '저장하기');
     }
   }
   
@@ -324,18 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 기본 검증
     if (!title) {
-      showInAppNotification('제목을 입력해주세요.', 'error');
+      showInAppNotification(getLocaleMessage('input_need_title', '제목을 입력해주세요.'), 'error');
       return;
     }
     
     if (!text) {
-      showInAppNotification('내용을 입력해주세요.', 'error');
+      showInAppNotification(getLocaleMessage('input_need_content', '내용을 입력해주세요.'), 'error');
       return;
     }
     
     // 보안 검증: 원본과 sanitized 버전이 다르면 경고
     if (rawTitle !== title || rawText !== text || rawTagsString !== tagsString) {
-      showInAppNotification('입력값에서 보안상 위험한 내용이 제거되었습니다.', 'error');
+      showInAppNotification(getLocaleMessage('input_sanitized_warning', '입력값에서 보안상 위험한 내용이 제거되었습니다.'), 'error');
       // sanitized 값으로 입력 필드 업데이트
       titleInput.value = title;
       textInput.value = text;
@@ -373,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
           };
 
           if (!validateTextData(updatedItem)) {
-            showInAppNotification('데이터 형식이 올바르지 않습니다.', 'error');
+            showInAppNotification(getLocaleMessage('data_invalid', '데이터 형식이 올바르지 않습니다.'), 'error');
             return;
           }
 
@@ -392,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (!validateTextData(newText)) {
-          showInAppNotification('데이터 형식이 올바르지 않습니다.', 'error');
+          showInAppNotification(getLocaleMessage('data_invalid', '데이터 형식이 올바르지 않습니다.'), 'error');
           return;
         }
         
@@ -406,7 +491,10 @@ document.addEventListener('DOMContentLoaded', () => {
         resetForm();
         
         // 알림 표시 (기존 alert 대신 사용)
-        showInAppNotification(isEditing ? '텍스트가 수정되었습니다!' : '텍스트가 저장되었습니다!', 'success');
+        showInAppNotification(
+          isEditing ? getLocaleMessage('text_update_success', '텍스트가 수정되었습니다!') : getLocaleMessage('text_save_success', '텍스트가 저장되었습니다!'),
+          'success'
+        );
         
         // 성공적으로 저장된 후 임시 데이터 삭제
         localStorage.removeItem(TEMP_STORAGE_KEY);
@@ -486,7 +574,9 @@ document.addEventListener('DOMContentLoaded', () => {
       filteredTexts.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
       
       if (filteredTexts.length === 0) {
-        const emptyMessage = searchQuery ? `"${searchQuery}" 검색 결과가 없습니다.` : '저장된 텍스트가 없습니다.';
+        const emptyMessage = searchQuery
+          ? getLocaleMessage('view_empty_search', `"${searchQuery}" 검색 결과가 없습니다.`, [searchQuery])
+          : getLocaleMessage('view_empty_texts', '저장된 텍스트가 없습니다.');
         
         const emptyStateDiv = document.createElement('div');
         emptyStateDiv.className = 'empty-state';
@@ -498,7 +588,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const h4 = document.createElement('h4');
         h4.textContent = emptyMessage;
         const p = document.createElement('p');
-        p.textContent = searchQuery ? '다른 검색어를 시도해보세요.' : '새로운 텍스트를 저장해보세요.';
+        p.textContent = searchQuery
+          ? getLocaleMessage('view_try_another', '다른 검색어를 시도해보세요.')
+          : getLocaleMessage('view_save_prompt', '새로운 텍스트를 저장해보세요.');
         emptyStateDiv.appendChild(emptyIconDiv);
         emptyStateDiv.appendChild(h4);
         emptyStateDiv.appendChild(p);
@@ -553,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tagInput.value = textToEdit.tags ? textToEdit.tags.join(', ') : '';
         editingId.value = textId;
         const btnText = saveBtn.querySelector('.btn-content span');
-        if (btnText) btnText.textContent = '수정하기';
+        if (btnText) btnText.textContent = getLocaleMessage('button_edit_mode', '수정하기');
         
         updateTagPreview();
         switchTab(saveTabBtn, saveTab);
@@ -566,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.clipboard.writeText(text).then(() => {
       const feedbackElement = textItem.querySelector('.copy-feedback');
       if (feedbackElement) {
-        feedbackElement.textContent = '복사됨!';
+        feedbackElement.textContent = getLocaleMessage('copied_feedback', '복사됨!');
         feedbackElement.style.display = 'inline';
         setTimeout(() => { feedbackElement.style.display = 'none'; }, 2000);
       }
@@ -577,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }).catch(err => {
       fallbackCopyToClipboard(text);
-      showInAppNotification('클립보드 복사에 실패했습니다.', 'error');
+      showInAppNotification(getLocaleMessage('clipboard_failed', '클립보드 복사에 실패했습니다.'), 'error');
     });
   }
   
@@ -604,9 +696,9 @@ document.addEventListener('DOMContentLoaded', () => {
     textarea.select();
     try {
       document.execCommand('copy');
-      showInAppNotification('텍스트가 복사되었습니다!', 'success');
+      showInAppNotification(getLocaleMessage('copy_success', '텍스트가 복사되었습니다!'), 'success');
     } catch (err) {
-      showInAppNotification('복사에 실패했습니다.', 'error');
+      showInAppNotification(getLocaleMessage('copy_failed', '복사에 실패했습니다.'), 'error');
     }
     document.body.removeChild(textarea);
   }
@@ -617,12 +709,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const savedTexts = result.savedTexts || [];
       const textToDelete = savedTexts.find(text => text.id === textId);
       if (!textToDelete) {
-        showInAppNotification('삭제할 텍스트를 찾을 수 없습니다.', 'error');
+        showInAppNotification(getLocaleMessage('delete_missing', '삭제할 텍스트를 찾을 수 없습니다.'), 'error');
         return;
       }
       const updatedTexts = savedTexts.filter(text => text.id !== textId);
       chrome.storage.local.set({ savedTexts: updatedTexts }, () => {
-        showInAppNotification(`"${textToDelete.title || '제목 없음'}" 텍스트가 삭제되었습니다.`, 'success');
+        const displayTitle = textToDelete.title || getLocaleMessage('untitled_text', '제목 없음');
+        showInAppNotification(
+          getLocaleMessage('delete_success', `"${displayTitle}" 텍스트가 삭제되었습니다.`, [displayTitle]),
+          'success'
+        );
         if (viewTab.classList.contains('active')) {
           loadTextList(searchInput.value);
         }
@@ -645,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       if (savedTexts.length === 0) {
-        showImportResult('저장된 텍스트가 없습니다.', 'info');
+        showImportResult(getLocaleMessage('view_empty_texts', '저장된 텍스트가 없습니다.'), 'info');
         return;
       }
       const exportData = { version: '1.0', savedTexts: savedTexts, exportDate: new Date().toISOString() };
@@ -660,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showImportResult('데이터가 성공적으로 내보내졌습니다.', 'success');
+        showImportResult(getLocaleMessage('export_success', '데이터가 성공적으로 내보내졌습니다.'), 'success');
       }, 100);
     });
   }
@@ -677,12 +773,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function validateAndFilterImportData(data) {
     if (!data || typeof data !== 'object' || !Array.isArray(data.savedTexts)) {
-      return { valid: false, error: '유효하지 않은 JSON 형식입니다.', data: [], skipped: [] };
+      return { valid: false, error: getLocaleMessage('import_invalid_json', '유효하지 않은 JSON 형식입니다.'), data: [], skipped: [] };
     }
     
     // 보안: 최대 항목 수 제한
     if (data.savedTexts.length > 1000) {
-      return { valid: false, error: '보안상 최대 1000개 항목까지만 가져올 수 있습니다.', data: [], skipped: [] };
+      return { valid: false, error: getLocaleMessage('import_security_limit', '보안상 최대 1000개 항목까지만 가져올 수 있습니다.'), data: [], skipped: [] };
     }
     
     const validItems = [];
@@ -733,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     if (validItems.length === 0 && data.savedTexts.length > 0) {
-      return { valid: false, error: '가져올 수 있는 유효한 텍스트 항목이 없습니다.', data: [], skipped: invalidIndexes };
+      return { valid: false, error: getLocaleMessage('import_no_valid_items', '가져올 수 있는 유효한 텍스트 항목이 없습니다.'), data: [], skipped: invalidIndexes };
     }
     return { valid: true, data: validItems, skipped: invalidIndexes };
   }
@@ -745,23 +841,27 @@ document.addEventListener('DOMContentLoaded', () => {
         onModeSelected('replace', importedTexts);
         return;
       }
-      const message = `기존에 ${existingTexts.length}개의 텍스트가 저장되어 있습니다.\\n가져온 ${importedTexts.length}개의 텍스트를 어떻게 처리하시겠습니까?\\n\\n확인: 기존 데이터에 추가\\n취소: 기존 데이터를 대체`;
+      const message = getLocaleMessage(
+        'import_dialog_message',
+        `기존에 ${existingTexts.length}개의 텍스트가 저장되어 있습니다. 가져온 ${importedTexts.length}개의 텍스트를 어떻게 처리할까요?\n확인: 기존 데이터에 추가 | 취소: 가져오기를 취소`,
+        [existingTexts.length, importedTexts.length]
+      );
       if (confirm(message)) {
         onModeSelected('merge', importedTexts);
       } else {
-        onModeSelected('replace', importedTexts);
+        showImportResult(getLocaleMessage('import_cancelled', '가져오기를 취소했습니다.'), 'info');
       }
     });
   }
 
   function importData(file) {
     if (!file) {
-      showImportResult('파일이 선택되지 않았습니다.', 'error');
+      showImportResult(getLocaleMessage('import_no_file', '파일이 선택되지 않았습니다.'), 'error');
       return;
     }
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      showImportResult('파일 크기가 너무 큽니다. (최대 10MB)', 'error');
+      showImportResult(getLocaleMessage('import_file_too_large', '파일 크기가 너무 큽니다. (최대 10MB)'), 'error');
       return;
     }
     const reader = new FileReader();
@@ -770,13 +870,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const importedData = JSON.parse(e.target.result);
         const validation = validateAndFilterImportData(importedData);
         if (!validation.valid) {
-          showImportResult(`가져오기 실패: ${validation.error}`, 'error');
+          showImportResult(
+            getLocaleMessage('import_failed_prefix', `가져오기 실패: ${validation.error}`, [validation.error]),
+            'error'
+          );
           return;
         }
         const importedTexts = validation.data;
         const skippedIndexes = validation.skipped;
         if (importedTexts.length === 0) {
-          showImportResult(skippedIndexes.length > 0 ? `모든 항목에 필수 필드가 누락되어 가져오지 못했습니다.` : '가져올 데이터가 없습니다.', 'info');
+          const emptyMessage = skippedIndexes.length > 0
+            ? getLocaleMessage('import_missing_fields', '모든 항목에 필수 필드가 누락되어 가져오지 못했습니다.')
+            : getLocaleMessage('import_no_records', '가져올 데이터가 없습니다.');
+          showImportResult(emptyMessage, 'info');
           return;
         }
         showImportModeDialog(importedTexts, (mode, texts) => {
@@ -785,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const existingTexts = result.savedTexts || [];
               const mergedTexts = [...existingTexts, ...texts];
               chrome.storage.local.set({ savedTexts: mergedTexts }, () => {
-                showImportResult(`${texts.length}개의 텍스트를 추가했습니다.`, 'success');
+                showImportResult(getLocaleMessage('import_add_success', `${texts.length}개의 텍스트를 추가했습니다.`, [texts.length]), 'success');
                 loadTextList();
                 if (bookmarkTab.classList.contains('active')) loadBookmarkList();
                 updateCounters();
@@ -793,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           } else {
             chrome.storage.local.set({ savedTexts: texts }, () => {
-              showImportResult(`${texts.length}개의 텍스트로 대체했습니다.`, 'success');
+              showImportResult(getLocaleMessage('import_replace_success', `${texts.length}개의 텍스트로 대체했습니다.`, [texts.length]), 'success');
               loadTextList();
               if (bookmarkTab.classList.contains('active')) loadBookmarkList();
               updateCounters();
@@ -801,34 +907,42 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       } catch (error) {
-        showImportResult('JSON 파일 형식이 올바르지 않습니다.', 'error');
+        showImportResult(getLocaleMessage('import_invalid_json', 'JSON 파일 형식이 올바르지 않습니다.'), 'error');
       }
     };
-    reader.onerror = () => showImportResult('파일을 읽는 중 오류가 발생했습니다.', 'error');
+    reader.onerror = () => showImportResult(getLocaleMessage('import_file_read_error', '파일을 읽는 중 오류가 발생했습니다.'), 'error');
     reader.readAsText(file, 'UTF-8');
   }
 
   function restorePresetData() {
-    const confirmed = confirm('기본 프롬프트 5개를 다시 불러옵니다. 기존 동일 템플릿은 덮어써집니다. 진행하시겠습니까?');
+    const confirmed = confirm(
+      getLocaleMessage('preset_restore_confirm', '기본 프롬프트 5개를 다시 불러옵니다. 기존 동일 템플릿은 덮어써집니다. 진행하시겠습니까?')
+    );
     if (!confirmed) {
-      showInAppNotification('기본 프롬프트 복원이 취소되었습니다.', 'info');
+      showInAppNotification(getLocaleMessage('preset_restore_cancelled', '기본 프롬프트 복원이 취소되었습니다.'), 'info');
       return;
     }
 
     chrome.runtime.sendMessage({ action: 'restorePresets' }, (response) => {
       if (chrome.runtime.lastError) {
-        showInAppNotification('프롬프트 복원에 실패했습니다. 다시 시도해주세요.', 'error');
+        showInAppNotification(getLocaleMessage('preset_restore_failed', '프롬프트 복원에 실패했습니다. 다시 시도해주세요.'), 'error');
         return;
       }
 
       if (!response || response.error) {
-        showInAppNotification(response?.error || '프롬프트 복원 중 오류가 발생했습니다.', 'error');
+        showInAppNotification(
+          response?.error || getLocaleMessage('preset_restore_generic_error', '프롬프트 복원 중 오류가 발생했습니다.'),
+          'error'
+        );
         return;
       }
 
       const added = response.added ?? 0;
       const updated = response.updated ?? 0;
-      showInAppNotification(`기본 프롬프트 복원 완료 (추가 ${added}개 · 갱신 ${updated}개)`, 'success');
+      showInAppNotification(
+        getLocaleMessage('preset_restore_summary', `기본 프롬프트 복원 완료 (추가 ${added}개 · 갱신 ${updated}개)`, [added, updated]),
+        'success'
+      );
       loadTextList(searchInput.value);
       if (bookmarkTab.classList.contains('active')) {
         loadBookmarkList();
@@ -838,18 +952,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function resetAllData() {
-    showInAppNotification('정말로 모든 데이터를 초기화하시겠습니까?', 'error', 10000);
-    const userConfirmed = confirm('[주의] 정말로 모든 데이터를 영구적으로 삭제하시겠습니까?');
+    showInAppNotification(getLocaleMessage('reset_confirm_toast', '정말로 모든 데이터를 초기화하시겠습니까?'), 'error', 10000);
+    const userConfirmed = confirm(getLocaleMessage('reset_confirm_dialog', '[주의] 정말로 모든 데이터를 영구적으로 삭제하시겠습니까?'));
     if (userConfirmed) {
       chrome.storage.local.set({ savedTexts: [] }, () => {
-        showInAppNotification('모든 데이터가 초기화되었습니다.', 'success');
+        showInAppNotification(getLocaleMessage('reset_done', '모든 데이터가 초기화되었습니다.'), 'success');
         resetForm();
         loadTextList();
         loadBookmarkList();
         updateCounters();
       });
     } else {
-      showInAppNotification('데이터 초기화가 취소되었습니다.', 'info');
+      showInAppNotification(getLocaleMessage('reset_cancelled', '데이터 초기화가 취소되었습니다.'), 'info');
     }
   }
   
@@ -860,11 +974,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!file) return;
     const isJsonFile = file.type === 'application/json' || file.name.toLowerCase().endsWith('.json');
     if (!isJsonFile) {
-      showImportResult('JSON 파일만 가져올 수 있습니다.', 'error');
+      showImportResult(getLocaleMessage('import_only_json', 'JSON 파일만 가져올 수 있습니다.'), 'error');
       importInput.value = '';
       return;
     }
-    showImportResult('파일을 가져오는 중입니다...', 'info');
+    showImportResult(getLocaleMessage('import_in_progress', '파일을 가져오는 중입니다...'), 'info');
     importData(file);
     importInput.value = '';
   });
@@ -969,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // 제목에 호버 시 힌트 표시
-    titleElement.title = '더블클릭하여 복사';
+    titleElement.title = getLocaleMessage('copy_hint', '더블클릭하여 복사');
     
     const dateElement = document.createElement('span');
     dateElement.className = 'text-date';
@@ -1031,8 +1145,8 @@ document.addEventListener('DOMContentLoaded', () => {
     bookmarkBtn.className = 'item-btn bookmark-btn';
     // 보안: Font Awesome 대신 유니코드 문자 사용
     bookmarkBtn.textContent = text.isBookmarked ? '★' : '☆';
-    bookmarkBtn.setAttribute('aria-label', text.isBookmarked ? '북마크 해제' : '북마크');
-    bookmarkBtn.title = text.isBookmarked ? '북마크 해제' : '북마크';
+    bookmarkBtn.setAttribute('aria-label', text.isBookmarked ? getLocaleMessage('bookmark_remove', '북마크 해제') : getLocaleMessage('bookmark_add', '북마크'));
+    bookmarkBtn.title = text.isBookmarked ? getLocaleMessage('bookmark_remove', '북마크 해제') : getLocaleMessage('bookmark_add', '북마크');
   
     // Action Buttons Group
     const actionButtonsGroup = document.createElement('div');
@@ -1042,30 +1156,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyBtn = document.createElement('button');
     copyBtn.className = 'item-btn copy-btn';
     // 보안: Font Awesome 대신 유니코드 문자 사용
-    copyBtn.textContent = '📋 복사';
-    copyBtn.setAttribute('aria-label', '텍스트 복사');
-    copyBtn.title = '텍스트 복사';
+    copyBtn.textContent = getLocaleMessage('button_copy_label', '📋 복사');
+    copyBtn.setAttribute('aria-label', getLocaleMessage('button_copy_title', '텍스트 복사'));
+    copyBtn.title = getLocaleMessage('button_copy_title', '텍스트 복사');
   
     // Edit Button
     const editBtn = document.createElement('button');
     editBtn.className = 'item-btn edit-btn';
     // 보안: Font Awesome 대신 유니코드 문자 사용
-    editBtn.textContent = '✏️ 수정';
-    editBtn.setAttribute('aria-label', '텍스트 수정');
-    editBtn.title = '텍스트 수정';
+    editBtn.textContent = getLocaleMessage('button_edit_label', '✏️ 수정');
+    editBtn.setAttribute('aria-label', getLocaleMessage('button_edit_title', '텍스트 수정'));
+    editBtn.title = getLocaleMessage('button_edit_title', '텍스트 수정');
   
     // Delete Button (Toggles confirm UI)
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'item-btn delete-btn';
     // 보안: Font Awesome 대신 유니코드 문자 사용
-    deleteBtn.textContent = '🗑️ 삭제';
-    deleteBtn.setAttribute('aria-label', '텍스트 삭제');
-    deleteBtn.title = '텍스트 삭제';
+    deleteBtn.textContent = getLocaleMessage('button_delete_label', '🗑️ 삭제');
+    deleteBtn.setAttribute('aria-label', getLocaleMessage('button_delete_title', '텍스트 삭제'));
+    deleteBtn.title = getLocaleMessage('button_delete_title', '텍스트 삭제');
   
     // Copy Feedback Message
     const copyFeedback = document.createElement('span');
     copyFeedback.className = 'copy-feedback';
-    copyFeedback.textContent = '복사됨!';
+    copyFeedback.textContent = getLocaleMessage('copied_feedback', '복사됨!');
     copyFeedback.style.display = 'none';
   
     // Delete Confirmation UI
@@ -1075,15 +1189,15 @@ document.addEventListener('DOMContentLoaded', () => {
   
     const confirmText = document.createElement('span');
     confirmText.className = 'delete-confirm-text';
-    confirmText.textContent = '정말 삭제할까요?';
+    confirmText.textContent = getLocaleMessage('confirm_delete_prompt', '정말 삭제할까요?');
   
     const confirmYesBtn = document.createElement('button');
     confirmYesBtn.className = 'item-btn confirm-yes-btn';
-    confirmYesBtn.textContent = '예';
+    confirmYesBtn.textContent = getLocaleMessage('confirm_yes', '예');
   
     const confirmNoBtn = document.createElement('button');
     confirmNoBtn.className = 'item-btn confirm-no-btn';
-    confirmNoBtn.textContent = '아니요';
+    confirmNoBtn.textContent = getLocaleMessage('confirm_no', '아니요');
   
     deleteConfirmGroup.appendChild(confirmText);
     deleteConfirmGroup.appendChild(confirmYesBtn);
@@ -1200,13 +1314,18 @@ function updateAutoSaveStatus(status, duration = 2000) {
   if (!statusEl) return;
   const statusDot = statusEl.querySelector('.status-dot');
   const statusText = statusEl.querySelector('.status-text');
-  
-  statusText.textContent = `자동 ${status}`;
+  const savedLabel = getLocaleMessage('auto_save_saved', '저장됨');
+  const restoredLabel = getLocaleMessage('auto_save_restored', '복원됨');
+  const prefix = getLocaleMessage('auto_label', '자동');
+  let localizedStatus = status;
+  if (status === '저장됨') localizedStatus = savedLabel;
+  if (status === '복원됨') localizedStatus = restoredLabel;
+  statusText.textContent = `${prefix} ${localizedStatus}`;
   statusDot.className = `status-dot ${status === '저장됨' ? 'saved' : (status === '복원됨' ? 'restored' : '')}`;
   
   if (duration) {
     setTimeout(() => {
-      statusText.textContent = '자동 저장 준비됨';
+      statusText.textContent = getLocaleMessage('auto_save_ready', '자동 저장 준비됨');
       statusDot.className = 'status-dot';
     }, duration);
   }
@@ -1264,7 +1383,9 @@ function initAutoCompleteToggle() {
     
     // 시각적 피드백
     showInAppNotification(
-      enabled ? '//' + ' 자동완성 기능이 활성화되었습니다' : '//' + ' 자동완성 기능이 비활성화되었습니다',
+      enabled
+        ? getLocaleMessage('toggle_enabled_toast', '//' + ' 자동완성 기능이 활성화되었습니다')
+        : getLocaleMessage('toggle_disabled_toast', '//' + ' 자동완성 기능이 비활성화되었습니다'),
       enabled ? 'success' : 'info'
     );
   });
@@ -1272,6 +1393,9 @@ function initAutoCompleteToggle() {
 
 function updateFeatureStatus(enabled) {
   if (!featureStatusText) return;
-  featureStatusText.textContent = `기능 상태: ${enabled ? '활성화됨' : '비활성화됨'}`;
+  const prefix = getLocaleMessage('feature_status_prefix', '기능 상태:');
+  const enabledLabel = getLocaleMessage('feature_status_enabled', '활성화됨');
+  const disabledLabel = getLocaleMessage('feature_status_disabled', '비활성화됨');
+  featureStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
   featureStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
 }

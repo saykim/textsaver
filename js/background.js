@@ -89,7 +89,7 @@ function restorePresetTexts(sendResponse) {
 
 // 확장 프로그램이 설치될 때 초기 데이터 설정 및 단일 컨텍스트 메뉴 생성
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Palette: Extension installed/updated");
+  console.log("Text Saver: Extension installed/updated");
   
   // 컨텍스트 메뉴를 생성하기 전에 기존의 모든 메뉴 항목을 제거합니다.
   chrome.contextMenus.removeAll(() => {
@@ -99,10 +99,10 @@ chrome.runtime.onInstalled.addListener(() => {
     // 단일 컨텍스트 메뉴 생성
     chrome.contextMenus.create({
       id: "saveSelectedTextWithUrlAndAutoTags",
-      title: "Pallet로 선택 내용 저장",
+      title: "Text Saver로 선택 내용 저장",
       contexts: ["selection"]
     });
-    console.log("Palette single context menu created after removing all.");
+    console.log("Text Saver single context menu created after removing all.");
   });
 
   // 저장된 텍스트 목록이 없으면 프리셋 텍스트 초기화
@@ -135,7 +135,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Service Worker 활성 상태 유지를 위한 keep-alive 로직 (Alarms API 사용으로 개선)
 chrome.runtime.onStartup.addListener(() => {
-  console.log("Palette: Browser startup - Service Worker activated");
+  console.log("Text Saver: Browser startup - Service Worker activated");
   setupKeepAlive();
 
   chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
@@ -160,7 +160,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAlive') {
     // 간단한 storage 체크로 Service Worker 유지
     chrome.storage.local.get(['keepAlive'], () => {
-      console.log("Palette: Keep-alive check");
+      console.log("Text Saver: Keep-alive check");
     });
   }
 });
@@ -170,7 +170,7 @@ setupKeepAlive();
 
 // 키보드 단축키 처리 (Ctrl+Shift+T)
 chrome.commands.onCommand.addListener((command) => {
-      console.log('Palette //: Command received:', command);
+      console.log('Text Saver //: Command received:', command);
 
   if (command === 'toggle-auto-complete') {
     // 현재 활성 탭에 토글 메시지 전송
@@ -199,7 +199,7 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'palette-keepalive') {
+  if (port.name !== 'text-saver-keepalive') {
     return;
   }
 
@@ -212,7 +212,7 @@ chrome.runtime.onConnect.addListener((port) => {
         return;
       }
       // 다른 오류는 로그
-      console.warn('Palette: Port disconnect error:', errorMsg);
+      console.warn('Text Saver: Port disconnect error:', errorMsg);
     }
     // No-op: the listener exists to keep the service worker alive while the page is active.
   });
@@ -238,9 +238,9 @@ function updateExtensionIcon(enabled, showTemporaryBadge = false) {
     } else {
       setPermanentIconState(enabled);
     }
-    console.log('Palette //: Icon updated, enabled:', enabled, 'temporary:', showTemporaryBadge);
+    console.log('Text Saver //: Icon updated, enabled:', enabled, 'temporary:', showTemporaryBadge);
   } catch (e) {
-    console.error('Palette //: Error updating icon:', e);
+    console.error('Text Saver //: Error updating icon:', e);
   }
 }
 
@@ -256,7 +256,7 @@ function showTemporaryStatusBadge(enabled) {
   setBadge(
     enabled ? '✓' : '⏸️',
     enabled ? '#4CAF50' : '#9E9E9E',
-    `Palette: ${enabled ? '자동완성 활성화됨' : '자동완성 일시정지됨'}`
+    `Text Saver: ${enabled ? '자동완성 활성화됨' : '자동완성 일시정지됨'}`
   );
 
   // 3초 후 영구 상태로 변경
@@ -269,8 +269,8 @@ function showTemporaryStatusBadge(enabled) {
 // 영구 아이콘 상태 설정 (평상시)
 function setPermanentIconState(enabled) {
   const title = enabled
-    ? "Palette: 자동완성 활성화됨"
-    : "Palette (일시정지됨) - Ctrl+Shift+T로 토글";
+    ? "Text Saver: 자동완성 활성화됨"
+    : "Text Saver (일시정지됨) - Ctrl+Shift+T로 토글";
 
   setBadge('', null, title);
 }
@@ -282,13 +282,13 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.autoCompleteEnabled) {
     const enabled = changes.autoCompleteEnabled.newValue;
     updateExtensionIcon(enabled);
-    console.log('Palette //: Auto-complete setting changed to:', enabled);
+    console.log('Text Saver //: Auto-complete setting changed to:', enabled);
   }
 });
 
 // 컨텍스트 메뉴 클릭 이벤트 처리 (개선된 버전)
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  console.log("[Palette] Context menu clicked:", info, tab);
+  console.log("[Text Saver] Context menu clicked:", info, tab);
 
   if (info.menuItemId !== "saveSelectedTextWithUrlAndAutoTags" || !info.selectionText || !tab?.url) {
     return;
@@ -296,7 +296,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   // 보안: 입력 검증
   if (typeof info.selectionText !== 'string' || info.selectionText.length > 100000) {
-    console.error("[Palette] Invalid or too long selection text");
+    console.error("[Text Saver] Invalid or too long selection text");
     return;
   }
 
@@ -305,15 +305,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   try {
     const urlObj = new URL(tab.url);
     if (!SAFE_URL_SCHEMES.includes(urlObj.protocol)) {
-      console.error("[Palette] Unsafe URL scheme detected:", urlObj.protocol);
+      console.error("[Text Saver] Unsafe URL scheme detected:", urlObj.protocol);
       return;
     }
   } catch (error) {
-    console.error("[Palette] Invalid URL format:", error);
+    console.error("[Text Saver] Invalid URL format:", error);
     return;
   }
 
-  console.log("[Palette] 'saveSelectedTextWithUrlAndAutoTags' action triggered.");
+  console.log("[Text Saver] 'saveSelectedTextWithUrlAndAutoTags' action triggered.");
 
   // 데이터 준비
   const currentTime = new Date();
@@ -341,25 +341,25 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   // 저장 처리
   chrome.storage.local.get({ savedTexts: [] }, (result) => {
-    console.log("[Palette] Current savedTexts:", result.savedTexts);
+    console.log("[Text Saver] Current savedTexts:", result.savedTexts);
     const savedTexts = [...result.savedTexts, newTextEntry];
 
     chrome.storage.local.set({ savedTexts }, () => {
-      console.log("[Palette] Text saved successfully");
+      console.log("[Text Saver] Text saved successfully");
 
       // 뱃지 표시 (통합 함수 사용)
       try {
-        setBadge('저장', '#4CAF50', 'Palette: 텍스트 저장됨');
-        setTimeout(() => setBadge('', null, 'Palette'), 2000);
+        setBadge('저장', '#4CAF50', 'Text Saver: 텍스트 저장됨');
+        setTimeout(() => setBadge('', null, 'Text Saver'), 2000);
       } catch (e) {
-        console.error("[Palette] Error setting badge:", e);
+        console.error("[Text Saver] Error setting badge:", e);
       }
 
       // 브라우저 알림 표시
       chrome.notifications.create({
         type: 'basic',
         iconUrl: '../icons/icon48.png',
-        title: 'Palette',
+        title: 'Text Saver',
         message: '선택한 텍스트와 URL이 자동 태그와 함께 저장되었습니다!'
       });
     });
@@ -489,7 +489,7 @@ function filterItems(items, query) {
         (typeof item.sourceURL === 'string' && item.sourceURL.toLowerCase().includes(lowerQuery))
       );
     } catch (error) {
-      console.error("Palette: Error filtering item:", error);
+      console.error("Text Saver: Error filtering item:", error);
       return false;
     }
   });
@@ -497,7 +497,7 @@ function filterItems(items, query) {
 
 // 메시지 리스너 (개선된 에러 처리 및 모듈화)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("Palette: Message received:", request.action);
+  console.log("Text Saver: Message received:", request.action);
 
   try {
     // 검색 기능
@@ -519,11 +519,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     // 알 수 없는 액션
-    console.warn("Palette: Unknown action:", request.action);
+    console.warn("Text Saver: Unknown action:", request.action);
     sendResponse({ error: "Unknown action" });
 
   } catch (error) {
-    console.error("Palette: Message listener error:", error);
+    console.error("Text Saver: Message listener error:", error);
     sendResponse({ error: error.message });
   }
 
@@ -552,7 +552,7 @@ function handleSearchRequest(request, sendResponse) {
 
       // 데이터 타입 검증
       if (!Array.isArray(savedTexts)) {
-        console.error("Palette: savedTexts is not an array");
+        console.error("Text Saver: savedTexts is not an array");
         sendResponse({ error: 'Invalid data format', items: [] });
         return;
       }
@@ -561,10 +561,10 @@ function handleSearchRequest(request, sendResponse) {
       const sortedItems = sortByRelevance(filteredItems, query);
       const limitedItems = sortedItems.slice(0, MAX_SEARCH_RESULTS);
 
-      console.log(`Palette: Search completed. Query: "${query}", Results: ${limitedItems.length}`);
+      console.log(`Text Saver: Search completed. Query: "${query}", Results: ${limitedItems.length}`);
       sendResponse({ items: limitedItems });
     } catch (error) {
-      console.error("Palette: Error processing search:", error);
+      console.error("Text Saver: Error processing search:", error);
       sendResponse({ error: error.message, items: [] });
     }
   });
