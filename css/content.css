@@ -1,0 +1,75 @@
+/* Styles for the bookmark search UI will be defined here. */
+
+#text-saver-bookmark-search-ui {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  padding: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  min-width: 250px; /* 최소 너비 설정 */
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#text-saver-bookmark-search-ui ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#text-saver-bookmark-search-ui li {
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+  color: #2c3e50;
+}
+
+#text-saver-bookmark-search-ui li:last-child {
+  border-bottom: none;
+}
+
+#text-saver-bookmark-search-ui li:hover,
+#text-saver-bookmark-search-ui li.selected {
+  background-color: #ecf0f1;
+  color: #2c3e50; /* 선택 시 텍스트 색상 (선택 사항) */
+}
+
+#text-saver-bookmark-search-ui li.no-results {
+  cursor: default;
+  color: #777;
+}
+
+#text-saver-bookmark-search-ui li.no-results:hover,
+#text-saver-bookmark-search-ui li.no-results.selected {
+  background-color: white; /* no-results 항목은 호버/선택 스타일 변경 없음 */
+}
+
+/* === 다크 모드 대응 === */
+@media (prefers-color-scheme: dark) {
+  #text-saver-bookmark-search-ui {
+    background-color: #2d3748;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  #text-saver-bookmark-search-ui li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+  }
+
+  #text-saver-bookmark-search-ui li:hover,
+  #text-saver-bookmark-search-ui li.selected {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f7fafc;
+  }
+
+  #text-saver-bookmark-search-ui li.no-results {
+    color: #a0aec0;
+  }
+
+  #text-saver-bookmark-search-ui li.no-results:hover,
+  #text-saver-bookmark-search-ui li.no-results.selected {
+    background-color: #2d3748;
+  }
+} 

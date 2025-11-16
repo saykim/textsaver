@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!-- Copyright (c) 2024 syk -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 보안: 추가 보안 헤더 -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>Text Saver</title>
+  <link rel="stylesheet" href="css/popup.css">
+  <!-- 보안: 외부 CDN 제거, 로컬 리소스 사용 -->
+  <!-- 외부 폰트 및 아이콘 라이브러리 제거 -->
+  <style>
+  /* Toggle Switch Styles */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 24px;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-handle {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background: #ffffff;
+    border: 1px solid #bdc3c7;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-switch input:checked + .toggle-slider {
+    background: #2ecc71;
+    border-color: #2ecc71;
+  }
+
+  .toggle-switch input:checked + .toggle-slider .toggle-handle {
+    transform: translateX(24px);
+    background: #ffffff;
+    border-color: #2ecc71;
+  }
+
+  .toggle-switch:hover .toggle-slider {
+    border-color: #95a5a6;
+  }
+
+  .feature-status {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .feature-status kbd {
+    background: #ecf0f1;
+    border: 1px solid #bdc3c7;
+    border-radius: 2px;
+    padding: 2px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #2c3e50;
+  }
+
+  /* Setting item layout adjustment for toggle */
+  .settings-card .setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .setting-info {
+    flex: 1;
+  }
+
+  .setting-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .setting-info p {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <div class="logo-container">
+        <div class="logo-wrapper">
+          <img src="icons/icon48.png" alt="Text Saver Logo" class="app-logo">
+        </div>
+        <div class="title-wrapper">
+          <h1>Text Saver <span class="version-badge">V2.3</span></h1>
+        </div>
+      </div>
+    </header>
+    
+    <div class="tab-container">
+      <div class="tab-buttons">
+        <button id="saveTabBtn" class="tab-btn active" data-tab="save">
+          <div class="tab-icon">+</div>
+          <span class="tab-label">저장</span>
+        </button>
+        <button id="viewTabBtn" class="tab-btn" data-tab="view">
+          <div class="tab-icon">⌕</div>
+          <span class="tab-label">보기</span>
+          <span class="counter" id="textCounter">0</span>
+        </button>
+        <button id="bookmarkTabBtn" class="tab-btn" data-tab="bookmark">
+          <div class="tab-icon">★</div>
+          <span class="tab-label">북마크</span>
+          <span class="counter" id="bookmarkCounter">0</span>
+        </button>
+        <button id="settingsTabBtn" class="tab-btn" data-tab="settings">
+          <div class="tab-icon">≡</div>
+          <span class="tab-label">설정</span>
+        </button>
+      </div>
+      
+      <div id="saveTab" class="tab-content active">
+        <div class="form-card">
+          <div class="form-group floating-input">
+            <div class="input-wrapper">
+              <input type="text" id="titleInput" placeholder=" " class="modern-input">
+              <label for="titleInput" class="floating-label">제목을 입력하세요</label>
+              <div class="input-border"></div>
+            </div>
+          </div>
+          
+          <div class="form-group floating-input">
+            <div class="input-wrapper">
+              <textarea id="textInput" placeholder=" " class="modern-input"></textarea>
+              <label for="textInput" class="floating-label">내용을 입력하세요</label>
+              <div class="input-border"></div>
+            </div>
+          </div>
+          
+          <div class="form-group floating-input">
+            <div class="input-wrapper">
+              <input type="text" id="tagInput" placeholder=" " class="modern-input">
+              <label for="tagInput" class="floating-label">태그를 입력하세요 (쉼표로 구분)</label>
+              <div class="input-border"></div>
+            </div>
+            <div id="tagPreview" class="tag-preview"></div>
+          </div>
+          
+          <button id="saveBtn" class="primary-btn">
+            <div class="btn-content">
+              💾
+              <span>저장하기</span>
+            </div>
+          </button>
+        </div>
+        <input type="hidden" id="editingId" value="">
+      </div>
+      
+      <div id="viewTab" class="tab-content">
+        <div class="search-card">
+          <div class="form-group floating-input">
+            <div class="input-wrapper">
+              <input type="text" id="searchInput" placeholder=" " class="modern-input">
+              <label for="searchInput" class="floating-label">검색어를 입력하세요</label>
+              <div class="input-border"></div>
+            </div>
+          </div>
+          <div class="search-options">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="searchTitle" checked>
+              <span class="checkmark">✓</span>
+              <span class="checkbox-label">제목</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="searchContent" checked>
+              <span class="checkmark">✓</span>
+              <span class="checkbox-label">내용</span>
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="searchTags" checked>
+              <span class="checkmark">✓</span>
+              <span class="checkbox-label">태그</span>
+            </label>
+          </div>
+        </div>
+        <div id="textList" class="text-list custom-scrollbar">
+          <!-- 저장된 텍스트 목록이 여기에 동적으로 생성됩니다 -->
+        </div>
+      </div>
+      
+      <div id="bookmarkTab" class="tab-content">
+        <div class="section-header">
+          <div class="header-icon">🔖</div>
+          <div class="header-content">
+            <h3>북마크된 텍스트</h3>
+            <p>중요한 텍스트들을 빠르게 찾아보세요</p>
+          </div>
+        </div>
+        <div id="bookmarkList" class="text-list custom-scrollbar">
+          <!-- 북마크된 텍스트 목록이 여기에 동적으로 생성됩니다 -->
+        </div>
+        <div class="empty-state" id="emptyBookmarkMessage">
+          <div class="empty-icon">🔖</div>
+          <h4>북마크가 없습니다</h4>
+          <p>보기 탭에서 ★ 아이콘을 클릭하여 북마크하세요</p>
+        </div>
+      </div>
+      
+      <div id="settingsTab" class="tab-content">
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="header-icon">✨</div>
+            <div class="header-content header-inline">
+              <span class="header-title">기능 설정</span>
+              <span class="header-divider">-</span>
+              <span class="header-description">Text Saver의 자동완성 기능을 제어하세요</span>
+            </div>
+          </div>
+          
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>"//" 자동완성 기능</h4>
+                <p>입력창에서 //를 입력했을 때 저장된 텍스트 목록 표시</p>
+                <div class="feature-status">
+                  <span id="featureStatusText">기능 상태: 활성화됨</span>
+                  <kbd>Ctrl+Shift+T</kbd>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="autoCompleteToggle" checked>
+                <span class="toggle-slider">
+                  <span class="toggle-handle"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="header-icon">
+              💾
+            </div>
+            <div class="header-content header-inline">
+              <span class="header-title">데이터 관리</span>
+              <span class="header-divider">-</span>
+              <span class="header-description">데이터를 안전하게 백업하고 복원하세요</span>
+            </div>
+          </div>
+          
+          <div class="settings-card">
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>데이터 가져오기</h4>
+                <p>백업된 JSON 파일에서 데이터 복원</p>
+              </div>
+              <div class="file-input-container">
+                <button id="importBrowseBtn" class="secondary-btn">
+                  📤
+                  <span>가져오기</span>
+                </button>
+                <input type="file" id="importInput" accept=".json" style="display: none;">
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>데이터 내보내기</h4>
+                <p>모든 텍스트 데이터를 JSON 파일로 백업</p>
+              </div>
+              <button id="exportBtn" class="secondary-btn">
+                📥
+                <span>내보내기</span>
+              </button>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>기본 프롬프트 복원</h4>
+                <p>처음 제공되었던 5개의 템플릿을 다시 불러옵니다. 기존 동일 템플릿은 덮어씁니다.</p>
+              </div>
+              <button id="restorePresetsBtn" class="secondary-btn">
+                ♻️
+                <span>기본 프롬프트</span>
+              </button>
+            </div>
+
+            <div id="importResult" class="import-result"></div>
+          </div>
+
+          <div class="settings-card danger">
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>데이터 초기화</h4>
+                <p>⚠️ 모든 저장된 텍스트와 프리셋이 영구 삭제됩니다. 되돌릴 수 없습니다.</p>
+              </div>
+              <button id="resetDataBtn" class="danger-btn">
+                🗑️
+                <span>모든 데이터 초기화</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="inAppNotification" class="in-app-notification">
+      <div class="notification-content">
+        <span class="notification-icon"></span>
+        <span class="notification-text"></span>
+      </div>
+    </div>
+    
+  </div>
+  
+
+
+  <script src="js/popup.js"></script>
+
+</body>
+</html> 

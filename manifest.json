@@ -1,0 +1,56 @@
+{
+  "name": "Text Saver",
+  "version": "2.3",
+  "description": "Save text snippets with tags and easily access them when needed",
+  "manifest_version": 3,
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "storage",
+    "clipboardWrite",
+    "contextMenus",
+    "notifications",
+    "activeTab",
+    "alarms"
+  ],
+  "commands": {
+    "toggle-auto-complete": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T",
+        "mac": "Command+Shift+T"
+      },
+      "description": "Toggle Text Saver // auto-complete feature"
+    }
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "author": "BDK-KIMS-9587-TS",
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["js/content.js"],
+      "css": ["css/content.css"],
+      "all_frames": false,
+      "match_about_blank": false,
+      "run_at": "document_end"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals;"
+  }
+}
