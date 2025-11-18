@@ -9,53 +9,63 @@
  * - 디자인 완성도 향상
  */
 
-/* === 🎨 Professional Flat Design Variables === */
+/* === 🎨 Soft Modern Design Variables === */
 :root {
-  /* Professional Brand Colors - Muted & Clean */
-  --primary-color: #2563eb;
-  --primary-dark: #1d4ed8;
-  --primary-light: #eff6ff;
-  --primary-lighter: #f8fafc;
-  
-  /* Secondary Colors - Muted Professional */
+  /* Modern Brand Colors - Warm & Sophisticated */
+  --primary-color: #4f46e5;
+  --primary-dark: #4338ca;
+  --primary-light: #eef2ff;
+  --primary-lighter: #f5f7ff;
+
+  /* Secondary Colors - Harmonious */
   --secondary-color: #dc2626;
   --accent-color: #059669;
-  --warning-color: #d97706;
-  --info-color: #0891b2;
-  
-  /* Neutral Gray Scale - Professional */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
+  --warning-color: #f59e0b;
+  --info-color: #0ea5e9;
+
+  /* Neutral Gray Scale - Soft & Refined */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
   --text-tertiary: #64748b;
   --text-muted: #94a3b8;
   --text-subtle: #cbd5e1;
-  
-  /* Background Colors - Clean Professional */
+
+  /* Background Colors - Unified & Seamless */
   --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
+  --bg-secondary: #fafbfc;
   --bg-tertiary: #f1f5f9;
   --bg-card: #ffffff;
-  --bg-surface: #fcfcfd;
-  
-  /* Borders - Ultra Flat */
+  --bg-surface: #fefeff;
+  --bg-gradient: linear-gradient(135deg, #fafbfc 0%, #f8f9fb 100%);
+
+  /* Borders - Subtle */
   --border-color: #e2e8f0;
   --border-color-hover: #cbd5e1;
-  --border-color-focus: #2563eb;
+  --border-color-focus: #4f46e5;
   --border-subtle: #f1f5f9;
-  
-  /* Border Radius - Flat Design */
+
+  /* Border Radius - Soft Modern */
   --radius-none: 0px;
-  --radius-xs: 1px;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-  --radius-xl: 6px;
-  
-  /* Transitions - Minimal */
-  --transition-fast: all 0.1s ease;
-  --transition-normal: all 0.15s ease;
-  
-  /* Spacing - 최적화된 공간 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows - Depth & Elevation */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
+  /* Transitions - Smooth & Natural */
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing - Consistent System */
   --space-1: 0.125rem;
   --space-2: 0.25rem;
   --space-3: 0.375rem;
@@ -105,26 +115,26 @@ body {
   min-height: var(--popup-h);
   max-width: 500px;
   max-height: var(--popup-h);
-  background: var(--bg-card);
+  background: var(--bg-gradient);
   border: none;
   border-radius: 0;
   overflow: hidden !important;
   position: relative;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  grid-template-areas: 
+  grid-template-areas:
     "header"
     "tabs"
     "content";
   box-sizing: border-box;
 }
 
-/* === 🎯 Header 영역 - Ultra Flat Professional === */
+/* === 🎯 Header 영역 - Soft Modern === */
 .app-header {
   grid-area: header;
   padding: var(--space-4) var(--space-6);
   background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: none;
 }
 
 .logo-container {
@@ -144,8 +154,9 @@ body {
 .app-logo {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-none);
-  filter: grayscale(20%);
+  border-radius: var(--radius-sm);
+  filter: grayscale(0%);
+  box-shadow: var(--shadow-sm);
 }
 
 .title-wrapper h1 {
@@ -173,10 +184,10 @@ body {
 }
 
 .version-badge {
-  background-color: var(--text-muted);
+  background-color: var(--primary-color);
   color: var(--bg-primary);
-  padding: 1px 6px;
-  border-radius: var(--radius-none);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
   font-size: 0.65rem;
   font-weight: 700;
   margin-left: var(--space-2);
@@ -184,6 +195,7 @@ body {
   vertical-align: middle;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* === 🔔 Notification Styles === */
@@ -205,11 +217,11 @@ body {
 
 .notification-content {
   background: var(--bg-card);
-  backdrop-filter: var(--glass-backdrop);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-5);
-  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-6);
+  box-shadow: var(--shadow-xl);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -229,7 +241,7 @@ body {
   color: #ef4444;
 }
 
-/* === 📑 Tab Styles - Ultra Flat Professional === */
+/* === 📑 Tab Styles - Soft Modern === */
 .tab-container {
   grid-area: tabs;
   padding: 0 var(--space-6) var(--space-4);
@@ -240,22 +252,22 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: stretch;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin-bottom: 0;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  padding: 0;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-1);
   border: none;
 }
 
 .tab-btn {
   position: relative;
-  background: var(--bg-tertiary);
+  background: transparent;
   border: none;
   padding: var(--space-3) var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -273,14 +285,15 @@ body {
 }
 
 .tab-btn:hover {
-  background: var(--bg-card);
-  color: var(--text-secondary);
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary-color);
 }
 
 .tab-btn.active {
   background: var(--primary-color);
   color: #ffffff;
   font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
 
@@ -403,15 +416,15 @@ body {
   }
 }
 
-/* === 🔍 Search Card - Ultra Flat Professional === */
+/* === 🔍 Search Card - Soft Modern === */
 .search-card {
   flex-shrink: 0;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   margin-bottom: var(--space-4);
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .search-options {
@@ -445,11 +458,11 @@ body {
   width: 16px;
   height: 16px;
   border: 2px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   background: var(--bg-primary);
 }
 
@@ -518,21 +531,22 @@ body {
 
 .text-item {
   background: var(--bg-card);
-  border: none;
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   margin-bottom: var(--space-3);
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .text-item:hover {
   background: var(--bg-surface);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-color);
 }
 
 .text-title {
@@ -588,7 +602,7 @@ body {
   position: relative; /* ::after 가상 요소를 위함 */
   background-color: var(--bg-surface);
   padding: var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   margin-top: var(--space-3);
 }
 
@@ -651,12 +665,13 @@ body {
   background: var(--primary-light);
   color: var(--primary-color);
   padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 700;
-  border: 1px solid var(--border-color);
+  border: none;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  box-shadow: var(--shadow-xs);
 }
 
 @keyframes tagAppear {
@@ -767,10 +782,10 @@ body {
   background: transparent;
   border: none;
   color: var(--text-tertiary);
-  padding: var(--space-1);
-  border-radius: var(--radius-xs);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -781,8 +796,9 @@ body {
 .item-btn:hover {
   color: var(--primary-color);
   background-color: var(--primary-light);
-  border-color: rgba(102, 126, 234, 0.2);
+  border-color: var(--primary-color);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .item-btn i {
@@ -869,17 +885,17 @@ body {
    background-color: rgba(107, 114, 128, 0.2) !important;
 }
 
-/* === 🎯 Form Styles - Ultra Flat Professional === */
+/* === 🎯 Form Styles - Soft Modern === */
 .form-card {
   background: var(--bg-card);
-  border: none;
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: var(--space-6);
   margin-bottom: 0;
   max-height: calc(var(--popup-h) - 130px);
   overflow-y: auto;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .form-group {
@@ -1031,17 +1047,17 @@ textarea.modern-input {
   }
 }
 
-/* === 🔘 Button Styles - Ultra Flat Professional === */
+/* === 🔘 Button Styles - Soft Modern === */
 .primary-btn {
   background: var(--primary-color);
   color: white;
   border: none;
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-6);
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1049,12 +1065,13 @@ textarea.modern-input {
   width: 100%;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: none;
+  box-shadow: var(--shadow-md);
 }
 
 .primary-btn:hover {
   background: var(--primary-dark);
-  transform: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-content {
@@ -1067,49 +1084,53 @@ textarea.modern-input {
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   align-items: center;
   gap: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: none;
+  box-shadow: var(--shadow-xs);
 }
 
 .secondary-btn:hover {
   background: var(--bg-tertiary);
-  border-color: var(--border-color-hover);
-  color: var(--text-primary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .danger-btn {
   background: var(--secondary-color);
   color: white;
   border: none;
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   align-items: center;
   gap: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .danger-btn:hover {
   background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-/* === 📍 Section Headers - Ultra Flat === */
+/* === 📍 Section Headers - Soft Modern === */
 .section-header {
   display: flex;
   align-items: center;
@@ -1120,23 +1141,23 @@ textarea.modern-input {
 }
 
 .section-header.danger {
-  border-left: 2px solid var(--secondary-color);
+  border-left: 3px solid var(--secondary-color);
   padding-left: var(--space-4);
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-none);
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.05) 0%, transparent 100%);
+  border-radius: var(--radius-md);
 }
 
 .header-icon {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-md);
   background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 0.85rem;
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .section-header.danger .header-icon {
@@ -1188,16 +1209,17 @@ textarea.modern-input {
 
 .settings-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-none);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
-  margin-bottom: 0;
-  box-shadow: none;
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-card.danger {
   border-color: var(--secondary-color);
-  background: #fdf2f2;
+  background: linear-gradient(135deg, #fef2f2 0%, #fdf2f2 100%);
+  box-shadow: var(--shadow-md);
 }
 
 .setting-item {
@@ -1235,21 +1257,27 @@ textarea.modern-input {
 }
 
 .import-result.success {
-  background: rgba(16, 185, 129, 0.1);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
   color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
 }
 
 .import-result.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
   color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
 }
 
 .import-result.info {
-  background: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(79, 70, 229, 0.05) 100%);
+  color: var(--primary-color);
+  border: 1px solid rgba(79, 70, 229, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
 }
 
 /* === 🚫 Empty States === */
@@ -1260,16 +1288,17 @@ textarea.modern-input {
 }
 
 .empty-icon {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-full);
-  background: var(--primary-light);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-lighter) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--space-3);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .empty-state h4 {
@@ -1333,91 +1362,214 @@ textarea.modern-input {
   box-shadow: var(--shadow-sm);
 }
 
-/* === 🌙 Dark Mode Support === */
+/* === 🌙 Dark Mode Support - Soft Modern === */
 @media (prefers-color-scheme: dark) {
   :root {
-    --text-primary: #f7fafc;
-    --text-secondary: #e2e8f0;
-    --text-tertiary: #a0aec0;
-    --text-muted: #718096;
-    --bg-primary: #1a202c;
-    --bg-secondary: #2d3748;
-    --bg-tertiary: #4a5568;
-    --bg-card: rgba(45, 55, 72, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    /* Dark Mode Colors - Sophisticated & Comfortable */
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    --text-muted: #64748b;
+    --text-subtle: #475569;
+
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --bg-card: #1e293b;
+    --bg-surface: #253446;
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+
+    --border-color: #334155;
+    --border-color-hover: #475569;
+    --border-subtle: #1e293b;
+
+    --primary-color: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.15);
+    --primary-lighter: rgba(99, 102, 241, 0.08);
+
+    /* Dark Mode Shadows - Subtle Glow */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
   }
-  
+
   body {
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    background: var(--bg-gradient);
   }
 
-  /* 🎨 라이트모드와 동일한 선 제거 디자인 적용 */
-  
-  /* 헤더 구분선을 더 미묘하게 */
+  .container {
+    background: var(--bg-gradient);
+  }
+
+  /* Header - Seamless */
   .app-header {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
+    background: var(--bg-primary);
+    border-bottom: none;
   }
 
-  /* 탭 버튼 - 라이트모드와 동일하게 선 제거 */
+  .version-badge {
+    background-color: var(--primary-color);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Tab Buttons - Consistent with Light Mode */
   .tab-buttons {
-    border: none;
-    background: transparent;
+    background: var(--bg-tertiary);
   }
 
-  .tab-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: none;
+  .tab-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary-color);
   }
 
-  /* 텍스트 아이템 - 선 제거, 그림자만 */
+  .tab-btn.active {
+    background: var(--primary-color);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  }
+
+  /* Cards - Elevated Look */
   .text-item {
-    border: none;
-    box-shadow: 0 1px 3px rgba(255, 255, 255, 0.08);
     background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
   }
 
   .text-item:hover {
-    box-shadow: 0 2px 6px rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-color-hover);
   }
 
-  /* 검색 카드 - 배경 투명 */
-  .search-card {
-    background: transparent;
-    border: none;
-    box-shadow: none;
+  .search-card,
+  .form-card,
+  .settings-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
   }
 
-  /* 폼 카드 - 선 제거 */
-  .form-card {
-    border: none;
-    box-shadow: 0 1px 3px rgba(255, 255, 255, 0.08);
+  .settings-card.danger {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+    border-color: var(--secondary-color);
+    box-shadow: var(--shadow-md);
   }
 
-  /* 입력 필드 - 하단 라인만 */
+  /* Input Fields */
   .modern-input {
-    background-color: transparent;
-    border: none;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-primary);
   }
 
   .modern-input:focus {
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.05);
     border-bottom-color: var(--primary-color);
   }
 
-  /* 체크박스 */
-  .checkmark {
-    border: 2px solid rgba(255, 255, 255, 0.2);
+  .floating-label {
+    color: var(--text-tertiary);
   }
 
-  /* 콘텐츠 영역 배경 */
+  .modern-input:focus + .floating-label,
+  .modern-input:not(:placeholder-shown) + .floating-label {
+    color: var(--primary-color);
+    background: var(--bg-card);
+  }
+
+  /* Checkboxes */
+  .checkmark {
+    border: 2px solid var(--border-color);
+    background: var(--bg-card);
+  }
+
+  .checkbox-wrapper input[type="checkbox"]:checked + .checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Content Wrapper */
   .content-wrapper {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.03);
   }
 
   .content-wrapper::after {
     background: linear-gradient(to top, var(--bg-card), transparent);
+  }
+
+  /* Tags */
+  .tag {
+    background: var(--primary-light);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* Buttons */
+  .primary-btn {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 0 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .primary-btn:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.4);
+  }
+
+  .secondary-btn {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+  }
+
+  .secondary-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  /* Item Buttons */
+  .item-btn:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
+  }
+
+  /* Empty States */
+  .empty-icon {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-lighter) 100%);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  }
+
+  /* Section Headers */
+  .header-icon {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .section-header.danger .header-icon {
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.3);
+  }
+
+  /* Notifications */
+  .notification-content {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-xl), 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+
+  /* Import Results */
+  .import-result.success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+
+  .import-result.error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .import-result.info {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%);
+    border-color: rgba(99, 102, 241, 0.4);
   }
 }
 

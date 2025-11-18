@@ -1,14 +1,24 @@
-/* Styles for the bookmark search UI will be defined here. */
+/* === 🎨 Text Saver Autocomplete UI - Soft Modern Design === */
 
 #text-saver-bookmark-search-ui {
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  padding: 5px;
-  max-height: 200px;
+  /* Modern Colors & Layout */
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 4px;
+  max-height: 240px;
   overflow-y: auto;
-  min-width: 250px; /* 최소 너비 설정 */
-  border-radius: 3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+
+  /* Soft Modern Radius & Shadow */
+  border-radius: 12px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -4px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+
+  /* Smooth Appearance */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  backdrop-filter: blur(10px);
 }
 
 #text-saver-bookmark-search-ui ul {
@@ -18,58 +28,140 @@
 }
 
 #text-saver-bookmark-search-ui li {
-  padding: 8px 10px;
+  padding: 10px 14px;
   cursor: pointer;
-  font-size: 14px;
-  border-bottom: 1px solid #eee;
-  color: #2c3e50;
+  font-size: 13px;
+  border-bottom: none;
+  color: #1e293b;
+  border-radius: 8px;
+  margin: 2px 0;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 #text-saver-bookmark-search-ui li:last-child {
   border-bottom: none;
 }
 
-#text-saver-bookmark-search-ui li:hover,
+#text-saver-bookmark-search-ui li:hover {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  transform: translateX(2px);
+}
+
 #text-saver-bookmark-search-ui li.selected {
-  background-color: #ecf0f1;
-  color: #2c3e50; /* 선택 시 텍스트 색상 (선택 사항) */
+  background-color: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(79, 70, 229, 0.3);
 }
 
 #text-saver-bookmark-search-ui li.no-results {
   cursor: default;
-  color: #777;
+  color: #94a3b8;
+  text-align: center;
+  font-size: 12px;
+  padding: 16px 14px;
 }
 
-#text-saver-bookmark-search-ui li.no-results:hover,
+#text-saver-bookmark-search-ui li.no-results:hover {
+  background-color: transparent;
+  transform: none;
+}
+
 #text-saver-bookmark-search-ui li.no-results.selected {
-  background-color: white; /* no-results 항목은 호버/선택 스타일 변경 없음 */
+  background-color: transparent;
+  color: #94a3b8;
+  box-shadow: none;
 }
 
-/* === 다크 모드 대응 === */
+#text-saver-bookmark-search-ui li.more-items {
+  cursor: default;
+  color: #64748b;
+  font-size: 11px;
+  text-align: center;
+  padding: 8px 14px;
+  font-style: italic;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 4px;
+  border-radius: 0;
+}
+
+/* Custom Scrollbar for Autocomplete */
+#text-saver-bookmark-search-ui::-webkit-scrollbar {
+  width: 6px;
+}
+
+#text-saver-bookmark-search-ui::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  margin: 6px 0;
+}
+
+#text-saver-bookmark-search-ui::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+#text-saver-bookmark-search-ui::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* === 🌙 Dark Mode for Autocomplete UI === */
 @media (prefers-color-scheme: dark) {
   #text-saver-bookmark-search-ui {
-    background-color: #2d3748;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.6),
+      0 4px 6px -4px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(0, 0, 0, 0.3);
   }
 
   #text-saver-bookmark-search-ui li {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    color: #cbd5e1;
   }
 
-  #text-saver-bookmark-search-ui li:hover,
+  #text-saver-bookmark-search-ui li:hover {
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+  }
+
   #text-saver-bookmark-search-ui li.selected {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #f7fafc;
+    background-color: #6366f1;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
   }
 
   #text-saver-bookmark-search-ui li.no-results {
-    color: #a0aec0;
+    color: #64748b;
   }
 
-  #text-saver-bookmark-search-ui li.no-results:hover,
+  #text-saver-bookmark-search-ui li.no-results:hover {
+    background-color: transparent;
+  }
+
   #text-saver-bookmark-search-ui li.no-results.selected {
-    background-color: #2d3748;
+    background-color: transparent;
+    color: #64748b;
+    box-shadow: none;
+  }
+
+  #text-saver-bookmark-search-ui li.more-items {
+    color: #64748b;
+    border-top-color: #334155;
+  }
+
+  /* Dark Mode Scrollbar */
+  #text-saver-bookmark-search-ui::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  #text-saver-bookmark-search-ui::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+
+  #text-saver-bookmark-search-ui::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
   }
 } 
