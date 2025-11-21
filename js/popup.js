@@ -1263,9 +1263,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function startAutoSave() {
   if (autoSaveTimer) clearInterval(autoSaveTimer);
   autoSaveTimer = setInterval(() => {
-    if (document.getElementById('titleInput').value.trim() || document.getElementById('textInput').value.trim() || document.getElementById('tagInput').value.trim()) {
-      saveTempData();
-    }
+    // 항상 현재 상태를 저장 (빈 값이어도 저장해야 지워진 상태가 유지됨)
+    saveTempData();
   }, AUTO_SAVE_INTERVAL);
   window.addEventListener('beforeunload', saveTempData);
 }

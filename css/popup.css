@@ -145,7 +145,12 @@ body {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-none);
-  filter: grayscale(20%);
+  filter: grayscale(0%); /* Full color */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
+}
+
+.app-logo:hover {
+  transform: scale(1.15) rotate(5deg);
 }
 
 .title-wrapper h1 {
@@ -173,10 +178,14 @@ body {
 }
 
 .version-badge {
-  background-color: var(--text-muted);
-  color: var(--bg-primary);
-  padding: 1px 6px;
-  border-radius: var(--radius-none);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 0.65rem;
   font-weight: 700;
   margin-left: var(--space-2);
@@ -184,6 +193,7 @@ body {
   vertical-align: middle;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 /* === 🔔 Notification Styles === */
@@ -239,11 +249,11 @@ body {
 .tab-buttons {
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
-  gap: var(--space-1);
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: 0;
   background: transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   padding: 0;
   border: none;
 }
@@ -252,10 +262,10 @@ body {
   position: relative;
   background: var(--bg-tertiary);
   border: none;
-  padding: var(--space-3) var(--space-3);
-  border-radius: var(--radius-sm);
+  padding: 0.6em 0.8em; /* Reduced padding to fit 4 buttons */
+  border-radius: 12px; /* Rounded rectangle shape */
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -265,24 +275,43 @@ body {
   font-weight: 600;
   color: var(--text-tertiary);
   overflow: hidden;
-  min-height: 32px;
+  min-height: 36px;
   flex: 1;
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow for inactive */
 }
 
 .tab-btn:hover {
   background: var(--bg-card);
   color: var(--text-secondary);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
 }
 
 .tab-btn.active {
-  background: var(--primary-color);
+  /* Blue Gradient for extension theme */
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   color: #ffffff;
   font-weight: 700;
+  /* Blue Shadow */
+  box-shadow: 0 0.5em 1.2em -0.4em rgba(37, 99, 235, 0.6);
 }
 
+.tab-btn.active:hover {
+  box-shadow: 0 0.4em 1.2em -0.4em rgba(37, 99, 235, 0.7);
+  transform: translateY(-1px);
+}
+
+.tab-btn.active:active {
+  box-shadow: 0 0.2em 0.8em -0.4em rgba(37, 99, 235, 0.6);
+  transform: translateY(0);
+}
 
 .tab-icon {
   position: relative;
@@ -326,22 +355,29 @@ body {
 }
 
 .counter {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  background: var(--secondary-color);
+  position: relative;
+  top: auto;
+  right: auto;
+  background: var(--primary-color);
   color: white;
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  padding: 1px 3px;
-  border-radius: var(--radius-full);
-  min-width: 10px;
-  height: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 3;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
+  margin-left: 2px;
+}
+
+.tab-btn.active .counter {
+  background: white;
+  color: var(--primary-color);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .tab-indicator {
@@ -357,7 +393,7 @@ body {
   grid-area: content;
   display: none;
   animation: slideIn 0.3s ease-out;
-  padding: var(--space-1) var(--space-4) 0; /* 🎯 하단 패딩 완전 제거 */
+  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
   overflow: hidden !important;
   height: 100%;
   box-sizing: border-box;
@@ -376,7 +412,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
-  padding: var(--space-1) var(--space-4) 0; /* 🎯 하단 패딩 완전 제거 */
+  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
   height: calc(var(--popup-h) - 100px) !important; /* 🎯 높이 최적화 */
   max-height: calc(var(--popup-h) - 100px) !important;
   min-height: 0;
@@ -387,7 +423,7 @@ body {
 #settingsTab.tab-content.active {
   display: block;
   overflow-y: auto !important;
-  padding: var(--space-1) var(--space-4) 0; /* 🎯 하단 패딩 완전 제거 */
+  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
   height: calc(var(--popup-h) - 100px) !important; /* 🎯 높이 최적화 */
   max-height: calc(var(--popup-h) - 100px) !important;
 }
@@ -495,44 +531,49 @@ body {
 }
 
 /* 텍스트 리스트 전용 스크롤바 디자인 */
+/* === 📜 Custom Scrollbar (Hidden but Functional) === */
+::-webkit-scrollbar {
+  display: none; /* 🎯 Hide scrollbar globally */
+}
+
+/* Remove old specific scrollbar styles to use global one */
 .text-list::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .text-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-full);
+  background: transparent;
   margin: var(--space-2);
 }
 
 .text-list::-webkit-scrollbar-thumb {
-  background: var(--primary-gradient);
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(148, 163, 184, 0.5);
+  border: none;
 }
 
 .text-list::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6b73e8 100%);
-  box-shadow: 0 0 8px rgba(102, 126, 234, 0.3);
+  background: rgba(148, 163, 184, 0.8);
+  box-shadow: none;
 }
 
 .text-item {
   background: var(--bg-card);
-  border: none;
-  border-radius: var(--radius-sm);
+  border: 1px solid transparent; /* Prepare for border transition */
+  border-radius: 12px; /* Rounded rectangle */
   padding: var(--space-5);
-  margin-bottom: var(--space-3);
-  transition: var(--transition-fast);
+  margin-bottom: var(--space-4); /* Increased vertical spacing */
+  transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .text-item:hover {
   background: var(--bg-surface);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.3); /* Subtle blue border on hover */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); /* Enhanced shadow */
+  transform: translateY(-2px);
 }
 
 .text-title {
@@ -790,24 +831,27 @@ body {
 }
 
 .bookmark-btn {
-  padding: var(--space-1);
-  border-radius: var(--radius-xs);
-}
-
-/* 북마크 버튼 유니코드 스타일 */
-.bookmark-btn {
+  padding: var(--space-2);
+  border-radius: 50%; /* Circular touch target */
   color: var(--text-tertiary);
   transition: var(--transition-fast);
-  font-size: 1.2rem;
+  font-size: 1.3rem; /* Larger icon */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
 }
 
-/* 북마크된 상태 - 살짝 어두운 금색 */
+/* 북마크된 상태 - 밝은 금색/오렌지 */
 .bookmark-btn.bookmarked {
-  color: #d4a253;
+  color: #f59e0b;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); /* Glow effect */
 }
 
 .bookmark-btn:hover {
-  color: #ffc107;
+  color: #fbbf24;
+  background-color: rgba(245, 158, 11, 0.1); /* Subtle background on hover */
   transform: scale(1.1);
 }
 
@@ -883,7 +927,7 @@ body {
 }
 
 .form-group {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8); /* Increased spacing for breathing room */
 }
 
 .floating-input {
@@ -909,79 +953,57 @@ body {
 }
 
 .modern-input {
-  border: none;
-  border-bottom: 2px solid var(--border-color);
-  background-color: transparent;
-  padding: var(--space-4) var(--space-5) var(--space-4) var(--space-4);
+  border: 1px solid transparent;
+  background-color: var(--bg-tertiary);
+  padding: var(--space-4) var(--space-5);
   width: 100%;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--text-primary);
   outline: none;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   position: relative;
   z-index: 2;
-  border-radius: 0;
+  border-radius: 12px; /* Rounded rectangle */
   font-weight: 500;
 }
 
 .modern-input:focus {
-  border-bottom-color: var(--primary-color);
-  background-color: transparent;
-  box-shadow: none;
+  background-color: var(--bg-card);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .modern-input:focus ~ .input-icon {
   color: var(--primary-color);
 }
 
+/* Remove old input border animation */
 .input-border {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  display: none;
+}
+
+.modern-input:focus + .floating-input {
+  position: relative;
   width: 100%;
-  height: 2px;
-  background: var(--primary-color);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-  z-index: 1;
 }
 
-.modern-input:focus + .floating-label + .input-border {
-  transform: scaleX(1);
-}
-
-.floating-label {
-  position: absolute;
-  left: var(--space-4);
-  top: 50%;
-  transform: translateY(-50%);
+/* Placeholder Styling */
+.modern-input::placeholder {
   color: var(--text-tertiary);
-  pointer-events: none;
-  transition: all 0.2s ease-out;
-  z-index: 1;
-  transform-origin: left center;
-  white-space: nowrap;
-  background: transparent;
-  padding: 0;
-  font-size: 0.9rem;
+  opacity: 0.7;
+  font-weight: 400;
+  transition: opacity var(--transition-fast);
 }
 
-/* 🔥 최종 해결책: 순수 CSS를 이용한 플로팅 로직 🔥 */
-.modern-input:focus + .floating-label,
-.modern-input:not(:placeholder-shown) + .floating-label {
-  top: 0;
-  transform: translateY(-50%) scale(0.85);
-  color: var(--primary-color);
-  background: var(--bg-card);
-  padding: 0 var(--space-2);
-  z-index: 4;
-  border-radius: var(--radius-sm);
+.modern-input:focus::placeholder {
+  opacity: 0.5;
 }
 
 textarea.modern-input {
-  resize: vertical;
-  min-height: 120px;
-  padding-top: var(--space-4);
+  min-height: 220px; /* Increased height to fill space */
+  resize: none;
+  line-height: 1.6;
+  padding-top: var(--space-5); /* Increased padding */
 }
 
 /* Textarea 특별 처리 */
@@ -990,16 +1012,7 @@ textarea.modern-input {
   transform: none;
 }
 
-.input-wrapper:has(textarea) .floating-label {
-  top: var(--space-4);
-  transform: none;
-}
 
-.input-wrapper:has(textarea) .modern-input:focus + .floating-label,
-.input-wrapper:has(textarea) .modern-input:not(:placeholder-shown) + .floating-label {
-  top: 0;
-  transform: translateY(-50%) scale(0.85);
-}
 
 .tag-preview {
   display: flex;
@@ -1013,11 +1026,34 @@ textarea.modern-input {
 .preview-tag {
   background: var(--primary-light);
   color: var(--primary-color);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
-  font-size: 0.7rem;
+  padding: 4px 10px; /* Increased padding */
+  border-radius: 20px; /* Pill shape */
+  font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid var(--border-color-focus);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-tag:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.preview-tag::after {
+  content: '×';
+  font-size: 1.1em;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.preview-tag:hover::after {
+  opacity: 1;
 }
 
 @keyframes tagAppear {
@@ -1033,15 +1069,20 @@ textarea.modern-input {
 
 /* === 🔘 Button Styles - Ultra Flat Professional === */
 .primary-btn {
-  background: var(--primary-color);
+  /* Blue Gradient for extension theme */
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   color: white;
   border: none;
-  border-radius: var(--radius-none);
+  border-radius: 12px; /* Rounded rectangle */
   padding: var(--space-4) var(--space-6);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: var(--transition-normal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1049,12 +1090,18 @@ textarea.modern-input {
   width: 100%;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: none;
+  /* Blue Shadow */
+  box-shadow: 0 0.5em 1.2em -0.4em rgba(37, 99, 235, 0.6);
 }
 
 .primary-btn:hover {
-  background: var(--primary-dark);
-  transform: none;
+  box-shadow: 0 0.4em 1.2em -0.4em rgba(37, 99, 235, 0.7);
+  transform: translateY(-1px);
+}
+
+.primary-btn:active {
+  box-shadow: 0 0.2em 0.8em -0.4em rgba(37, 99, 235, 0.6);
+  transform: translateY(0);
 }
 
 .btn-content {
@@ -1067,7 +1114,7 @@ textarea.modern-input {
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-none);
+  border-radius: 10px; /* Rounded */
   padding: var(--space-3) var(--space-4);
   font-size: 0.8rem;
   font-weight: 600;
@@ -1078,20 +1125,22 @@ textarea.modern-input {
   gap: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .secondary-btn:hover {
   background: var(--bg-tertiary);
   border-color: var(--border-color-hover);
   color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .danger-btn {
-  background: var(--secondary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-none);
+  background: rgba(220, 38, 38, 0.1); /* Soft red background */
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 10px; /* Rounded */
   padding: var(--space-3) var(--space-4);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1106,7 +1155,8 @@ textarea.modern-input {
 }
 
 .danger-btn:hover {
-  background: #b91c1c;
+  background: rgba(220, 38, 38, 0.2);
+  transform: translateY(-1px);
 }
 
 /* === 📍 Section Headers - Ultra Flat === */
@@ -1114,8 +1164,8 @@ textarea.modern-input {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) 0;
+  margin-bottom: var(--space-2); /* Reduced from space-4 */
+  padding: var(--space-2) 0; /* Reduced from space-3 */
   flex-shrink: 0;
 }
 
@@ -1129,18 +1179,19 @@ textarea.modern-input {
 .header-icon {
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-none);
+  border-radius: 10px; /* Rounded */
   background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 0.85rem;
-  box-shadow: none;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
 .section-header.danger .header-icon {
   background: var(--secondary-color);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
 }
 
 .header-content:not(.header-inline) h3 {
@@ -1188,23 +1239,28 @@ textarea.modern-input {
 
 .settings-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-none);
-  padding: var(--space-5);
-  margin-bottom: 0;
-  box-shadow: none;
+  border: 1px solid transparent;
+  border-radius: 12px; /* Rounded */
+  padding: var(--space-4); /* Reduced from space-5 */
+  margin-bottom: var(--space-3); /* Reduced from space-4 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: var(--transition-normal);
+}
+
+.settings-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .settings-card.danger {
-  border-color: var(--secondary-color);
-  background: #fdf2f2;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.03);
 }
 
 .setting-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0; /* Reduced from space-3 */
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -1253,36 +1309,62 @@ textarea.modern-input {
 }
 
 /* === 🚫 Empty States === */
+/* === 🚫 Empty States === */
 .empty-state {
   text-align: center;
-  padding: var(--space-6) var(--space-3);
+  padding: var(--space-10) var(--space-6);
   color: var(--text-tertiary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .empty-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
   background: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto var(--space-3);
-  font-size: 1.1rem;
+  margin: 0 auto var(--space-4);
+  font-size: 1.8rem;
   color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15); /* Soft glow */
+  transition: transform 0.3s ease;
+}
+
+.empty-state:hover .empty-icon {
+  transform: scale(1.05) rotate(-5deg);
 }
 
 .empty-state h4 {
-  margin: 0 0 var(--space-1);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .empty-state p {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* === 🦶 Footer - 숨김 처리 === */
