@@ -1,6 +1,6 @@
 {
   "name": "Text Saver",
-  "version": "2.3.2",
+  "version": "2.4",
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,
@@ -25,8 +25,16 @@
     "contextMenus",
     "notifications",
     "activeTab",
-    "alarms"
+    "alarms",
+    "scripting",
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "138881851224-6v532ehts4oh3l4j678566rjmnslb339.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
   "commands": {
     "toggle-auto-complete": {
       "suggested_key": {

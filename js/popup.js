@@ -1398,3 +1398,127 @@ function updateFeatureStatus(enabled) {
   featureStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
   featureStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Google Drive Integration
+  const driveConnectBtn = document.getElementById('driveConnectBtn');
+  const driveStatus = document.getElementById('driveStatus');
+  const driveStatusText = document.getElementById('driveStatusText');
+  const driveActions = document.getElementById('driveActions');
+  const driveBackupBtn = document.getElementById('driveBackupBtn');
+  const driveRestoreBtn = document.getElementById('driveRestoreBtn');
+
+  // Check connection status on load
+  if (window.GoogleDrive) {
+    GoogleDrive.getAuthToken(false)
+      .then(token => {
+        if (token) {
+          updateDriveUI(true);
+        }
+      })
+      .catch(() => {
+        updateDriveUI(false);
+      });
+  }
+
+  function updateDriveUI(isConnected) {
+    const dot = driveStatus.querySelector('.status-dot');
+    if (isConnected) {
+      dot.style.background = '#34a853'; // Green
+      driveStatusText.textContent = '연결됨';
+      driveConnectBtn.style.display = 'none';
+      driveActions.style.display = 'flex';
+    } else {
+      dot.style.background = '#ccc'; // Gray
+      driveStatusText.textContent = '연결되지 않음';
+      driveConnectBtn.style.display = 'block';
+      driveActions.style.display = 'none';
+    }
+  }
+
+  if (driveConnectBtn) {
+    driveConnectBtn.addEventListener('click', () => {
+      GoogleDrive.getAuthToken(true)
+        .then(() => {
+          updateDriveUI(true);
+          showInAppNotification('구글 드라이브와 연결되었습니다.', 'success');
+        })
+        .catch(err => {
+          console.error('Auth failed', err);
+          showInAppNotification('연결에 실패했습니다.', 'error');
+        });
+    });
+  }
+
+  if (driveBackupBtn) {
+    driveBackupBtn.addEventListener('click', () => {
+      chrome.storage.local.get('savedTexts', (result) => {
+        const savedTexts = result.savedTexts || [];
+        if (savedTexts.length === 0) {
+          showInAppNotification('백업할 데이터가 없습니다.', 'info');
+          return;
+        }
+
+        const backupData = {
+          version: '1.0',
+          savedTexts: savedTexts,
+          backupDate: new Date().toISOString(),
+          device: navigator.userAgent
+        };
+
+        driveBackupBtn.disabled = true;
+        driveBackupBtn.textContent = '백업 중...';
+
+        GoogleDrive.uploadFile(backupData)
+          .then(() => {
+            showInAppNotification('구글 드라이브에 백업되었습니다.', 'success');
+          })
+          .catch(err => {
+            console.error('Backup failed', err);
+            showInAppNotification('백업에 실패했습니다.', 'error');
+          })
+          .finally(() => {
+            driveBackupBtn.disabled = false;
+            driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
+          });
+      });
+    });
+  }
+
+  if (driveRestoreBtn) {
+    driveRestoreBtn.addEventListener('click', () => {
+      if (!confirm('현재 로컬 데이터를 덮어쓰고 구글 드라이브의 백업본으로 복원하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        return;
+      }
+
+      driveRestoreBtn.disabled = true;
+      driveRestoreBtn.textContent = '복원 중...';
+
+      GoogleDrive.downloadFile()
+        .then(data => {
+          if (data && Array.isArray(data.savedTexts)) {
+            chrome.storage.local.set({ savedTexts: data.savedTexts }, () => {
+              showInAppNotification('데이터가 성공적으로 복원되었습니다.', 'success');
+              // Reload list if view tab is active, but since we are in settings, maybe just notify
+              // Ideally we should trigger a refresh if the user switches back to view tab
+              // For now, let's just update counters
+              const textCounter = document.getElementById('textCounter');
+              const bookmarkCounter = document.getElementById('bookmarkCounter');
+              if (textCounter) textCounter.textContent = data.savedTexts.length;
+              if (bookmarkCounter) bookmarkCounter.textContent = data.savedTexts.filter(t => t.isBookmarked).length;
+            });
+          } else {
+            throw new Error('Invalid backup data');
+          }
+        })
+        .catch(err => {
+          console.error('Restore failed', err);
+          showInAppNotification('복원에 실패했습니다. 백업 파일이 있는지 확인해주세요.', 'error');
+        })
+        .finally(() => {
+          driveRestoreBtn.disabled = false;
+          driveRestoreBtn.innerHTML = '<span style="margin-right: 4px;">📥</span> 복원하기';
+        });
+    });
+  }
+});

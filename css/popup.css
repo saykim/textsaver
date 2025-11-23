@@ -647,6 +647,9 @@ body {
   position: relative;
   padding: var(--space-3) 0;
   font-weight: 400;
+  overflow-wrap: anywhere; /* 🎯 Force wrapping for long strings */
+  word-break: break-word;  /* Fallback */
+  white-space: pre-wrap;   /* Preserve whitespace but wrap lines */
 }
 
 /* 내용이 잘렸을 때 흐릿하게 처리하는 가상 요소 */
@@ -1420,13 +1423,18 @@ textarea.modern-input {
   :root {
     --text-primary: #f7fafc;
     --text-secondary: #e2e8f0;
-    --text-tertiary: #a0aec0;
-    --text-muted: #718096;
+    --text-tertiary: #cbd5e0; /* Brightened from #a0aec0 */
+    --text-muted: #a0aec0;    /* Brightened from #718096 */
     --bg-primary: #1a202c;
     --bg-secondary: #2d3748;
     --bg-tertiary: #4a5568;
     --bg-card: rgba(45, 55, 72, 0.8);
     --glass-border: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Ensure setting descriptions are readable */
+  .setting-info p {
+    color: var(--text-tertiary) !important;
   }
   
   body {
