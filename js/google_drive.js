@@ -2,14 +2,55 @@ const GoogleDrive = {
   // 백업 파일명
   BACKUP_FILENAME: 'text_saver_backup.json',
   
-  // 인증 토큰 가져오기
+  // 인증 토큰 가져오기 (Hybrid: Chrome Native + Web Auth Flow)
   getAuthToken: (interactive = true) => {
     return new Promise((resolve, reject) => {
+      // 1. Chrome Native 방식 시도
       chrome.identity.getAuthToken({ interactive }, (token) => {
         if (chrome.runtime.lastError || !token) {
-          reject(chrome.runtime.lastError);
+          // 2. 실패 시 (Edge 등) Web Auth Flow 시도
+          if (interactive) {
+            console.log('Native auth failed, trying Web Auth Flow:', chrome.runtime.lastError);
+            GoogleDrive.getWebAuthToken(interactive).then(resolve).catch(reject);
+          } else {
+            reject(chrome.runtime.lastError);
+          }
         } else {
           resolve(token);
+        }
+      });
+    });
+  },
+
+  // Web Auth Flow (Edge/Whale 등 호환용)
+  getWebAuthToken: (interactive) => {
+    return new Promise((resolve, reject) => {
+      const manifest = chrome.runtime.getManifest();
+      const clientId = manifest.oauth2.client_id;
+      const scopes = manifest.oauth2.scopes.join(' ');
+      const redirectUri = chrome.identity.getRedirectURL();
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/auth` + 
+                      `?client_id=${clientId}` + 
+                      `&response_type=token` + 
+                      `&redirect_uri=${encodeURIComponent(redirectUri)}` + 
+                      `&scope=${encodeURIComponent(scopes)}`;
+
+      chrome.identity.launchWebAuthFlow({
+        url: authUrl,
+        interactive: interactive
+      }, (redirectUrl) => {
+        if (chrome.runtime.lastError || !redirectUrl) {
+          reject(chrome.runtime.lastError || new Error('Web Auth Flow failed'));
+        } else {
+          // URL에서 토큰 추출
+          const params = new URLSearchParams(new URL(redirectUrl).hash.substring(1));
+          const token = params.get('access_token');
+          if (token) {
+            resolve(token);
+          } else {
+            reject(new Error('No access token found'));
+          }
         }
       });
     });
