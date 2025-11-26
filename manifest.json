@@ -4,6 +4,7 @@
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApBZQ/EdwOmx0OdmLOBPBfXzsCGWMpE0n7tllAwApNGjIODM7QJWnuf/oSC19g/6Ig1qFJS2vqpnIhBytecDd/fCX5E/uR+CmLc0lrUcYJmFKmzzLRz3A4tZGwrmJ1kDXFwDM0w/Xn6mq9DmSVuFH2Vj0I8E3tfVdCtpanUYpS5bTa+P7qT/Xa4tZJaRmEBv2Ea6n53MfUeCOh71FBGyh/j8PuskhVqma4MXtjJI4LwHB5fF/QpGNk9malNJM8f5XMuLC5YEgXN7lrk9pvLQEEsNUckcTBth27cXKga9Mgs9CdNBEGBwIBnYzgnSptu0Bms8fis/V0NUTYVtI6HxYDQIDAQAB",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -30,7 +31,7 @@
     "identity"
   ],
   "oauth2": {
-    "client_id": "138881851224-eke2f1lo0qo9qcg53ebb5qog74em5p48.apps.googleusercontent.com",
+    "client_id": "138881851224-6v532ehts4oh3l4j678566rjmnslb339.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/drive.file"
     ]

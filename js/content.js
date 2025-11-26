@@ -1,7 +1,7 @@
 // This script will handle detecting '//' in input fields,
 // displaying the bookmark search UI, and interacting with the background script.
 
-console.log("Text Saver Extension: content.js loaded");
+// console.log("Text Saver Extension: content.js loaded");
 
 // 전역 변수 (모듈 패턴으로 캡슐화)
 const TextSaverContentState = {
@@ -409,7 +409,7 @@ function ensureKeepAliveConnection() {
 // 초기 설정 로드
 chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
   TextSaverContentState.autoCompleteEnabled = result.autoCompleteEnabled !== false;
-  console.log('TextSaver //: Initial auto-complete state:', TextSaverContentState.autoCompleteEnabled);
+  // console.log('TextSaver //: Initial auto-complete state:', TextSaverContentState.autoCompleteEnabled);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -1402,6 +1402,6 @@ document.addEventListener('focusin', (event) => {
   }
 });
 
-console.log("TextSaver //: Content script with message passing support loaded."); 
+// console.log("TextSaver //: Content script with message passing support loaded."); 
 
 initPerplexitySupport();

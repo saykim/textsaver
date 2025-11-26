@@ -1,3 +1,8 @@
 .git/
 node_modules/
 *.log
+*.pem
+*.key
+*.zip
+*.md
+.DS_Store
