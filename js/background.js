@@ -102,7 +102,15 @@ chrome.runtime.onInstalled.addListener(() => {
       title: "Text Saver로 선택 내용 저장",
       contexts: ["selection"]
     });
-    console.log("Text Saver single context menu created after removing all.");
+    
+    // 사이드 패널 열기 메뉴 추가
+    chrome.contextMenus.create({
+      id: "openSidePanel",
+      title: "Text Saver 사이드 패널 열기",
+      contexts: ["all"]
+    });
+    
+    console.log("Text Saver context menus created after removing all.");
   });
 
   // 저장된 텍스트 목록이 없으면 프리셋 텍스트 초기화
@@ -289,6 +297,23 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 // 컨텍스트 메뉴 클릭 이벤트 처리 (개선된 버전)
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   console.log("[Text Saver] Context menu clicked:", info, tab);
+
+  // 사이드 패널 열기 처리
+  if (info.menuItemId === "openSidePanel") {
+    // Chrome 116+ 사이드 패널 열기 API 사용
+    if (chrome.sidePanel && chrome.sidePanel.open) {
+      // 현재 윈도우 ID를 사용하여 사이드 패널 열기
+      chrome.windows.getCurrent({ populate: false }, (window) => {
+        if (window && window.id) {
+          chrome.sidePanel.open({ windowId: window.id })
+            .catch(error => console.error("Error opening side panel:", error));
+        }
+      });
+    } else {
+      console.warn("Side Panel API not supported in this browser version.");
+    }
+    return;
+  }
 
   if (info.menuItemId !== "saveSelectedTextWithUrlAndAutoTags" || !info.selectionText || !tab?.url) {
     return;

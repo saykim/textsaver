@@ -41,6 +41,8 @@ const GoogleDrive = {
         interactive: interactive
       }, (redirectUrl) => {
         if (chrome.runtime.lastError || !redirectUrl) {
+          const errorMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : 'Web Auth Flow failed';
+          console.error('Text Saver: Web Auth Flow Error:', errorMsg);
           reject(chrome.runtime.lastError || new Error('Web Auth Flow failed'));
         } else {
           // URL에서 토큰 추출
