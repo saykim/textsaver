@@ -1610,6 +1610,204 @@ textarea.modern-input {
   .settings-card.danger {
     background: rgba(239, 68, 68, 0.08);
   }
+  
+  /* === 🎨 다크 모드 디테일 개선 === */
+  
+  /* 탭 버튼 호버/활성 상태 개선 */
+  .tab-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-tertiary);
+  }
+  
+  .tab-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .tab-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+  
+  .tab-btn.active:hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+  }
+  
+  /* 태그 스타일 개선 */
+  .tag {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  .preview-tag {
+    background: rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+  
+  .preview-tag:hover {
+    background: rgba(59, 130, 246, 0.4);
+    color: #bfdbfe;
+  }
+  
+  /* 빈 상태 아이콘 개선 */
+  .empty-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+  
+  /* 알림 스타일 */
+  .notification-content {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* 스크롤바 다크 모드 */
+  .text-list::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.5);
+  }
+  
+  .text-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+  }
+  
+  /* 버전 뱃지 그림자 개선 */
+  .version-badge {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  }
+  
+  /* Placeholder 가독성 개선 */
+  .modern-input::placeholder {
+    color: rgba(148, 163, 184, 0.7);
+  }
+  
+  /* 북마크 버튼 개선 */
+  .bookmark-btn.bookmarked {
+    color: #fbbf24;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+  }
+  
+  .bookmark-btn:hover {
+    background-color: rgba(251, 191, 36, 0.15);
+  }
+  
+  /* 액션 버튼 호버 개선 */
+  .item-btn:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  /* 자동 저장 상태 표시 개선 */
+  .auto-save-status {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* 복사 피드백 개선 */
+  .copy-feedback {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+  }
+  
+  /* 삭제 확인 UI 개선 */
+  .delete-confirm-group {
+    background: rgba(239, 68, 68, 0.1);
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+  
+  .confirm-yes-btn {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+  }
+  
+  .confirm-yes-btn:hover {
+    background-color: rgba(239, 68, 68, 0.35) !important;
+  }
+  
+  /* Primary 버튼 그림자 개선 */
+  .primary-btn {
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
+  }
+  
+  .primary-btn:hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  }
+  
+  /* Secondary 버튼 개선 */
+  .secondary-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+  }
+  
+  .secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+  }
+  
+  /* Danger 버튼 개선 */
+  .danger-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+  
+  .danger-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+  
+  /* 제목 복사 하이라이트 개선 */
+  @keyframes titleHighlightDark {
+    0% {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+    }
+    50% {
+      background-color: rgba(59, 130, 246, 0.4);
+      color: #bfdbfe;
+    }
+    100% {
+      background-color: transparent;
+      color: var(--text-primary);
+    }
+  }
+  
+  .text-title.title-copied {
+    animation: titleHighlightDark 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* 검색 옵션 체크박스 라벨 */
+  .checkbox-label {
+    color: var(--text-secondary);
+  }
+  
+  .checkbox-wrapper:hover .checkbox-label {
+    color: #60a5fa;
+  }
+  
+  /* Import 결과 메시지 개선 */
+  .import-result.success {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+  
+  .import-result.error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+  
+  .import-result.info {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.25);
+  }
 }
 
 /* === ✨ Performance & Accessibility === */
