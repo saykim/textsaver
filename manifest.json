@@ -1,6 +1,6 @@
 {
   "name": "Text Saver",
-  "version": "2.5",
+  "version": "2.6",
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,

@@ -2,6 +2,9 @@ const GoogleDrive = {
   // 백업 파일명
   BACKUP_FILENAME: 'text_saver_backup.json',
   
+  // Edge/기타 브라우저용 Web Application Client ID (GCP에서 "웹 애플리케이션" 유형으로 생성)
+  EDGE_CLIENT_ID: '138881851224-qfjhr4fn9pv92j7vmrkp7eham0qs3kob.apps.googleusercontent.com',
+  
   // 인증 토큰 가져오기 (Hybrid: Chrome Native + Web Auth Flow)
   getAuthToken: (interactive = true) => {
     return new Promise((resolve, reject) => {
@@ -26,7 +29,8 @@ const GoogleDrive = {
   getWebAuthToken: (interactive) => {
     return new Promise((resolve, reject) => {
       const manifest = chrome.runtime.getManifest();
-      const clientId = manifest.oauth2.client_id;
+      // Edge 등 비-Chrome 브라우저는 Web Application Client ID 사용
+      const clientId = GoogleDrive.EDGE_CLIENT_ID;
       const scopes = manifest.oauth2.scopes.join(' ');
       const redirectUri = chrome.identity.getRedirectURL();
       
