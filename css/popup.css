@@ -613,23 +613,27 @@ body:not(.popup-mode) .text-list {
 
 /* 텍스트 리스트 전용 스크롤바 디자인 */
 /* === 📜 Custom Scrollbar (Text List 전용) === */
+/* 평소에는 투명, 스크롤 시에만 표시 */
 .text-list::-webkit-scrollbar {
   width: 6px;
 }
 
 .text-list::-webkit-scrollbar-track {
   background: transparent;
-  margin: var(--space-2);
 }
 
 .text-list::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.text-list:hover::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.5);
-  border: none;
 }
 
 .text-list::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.8);
-  box-shadow: none;
 }
 
 .text-item {
@@ -1593,9 +1597,9 @@ textarea.modern-input {
     border: 2px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* 콘텐츠 영역 배경 */
+  /* 콘텐츠 영역 배경 - 박스와 통일 */
   .content-wrapper {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: transparent;
   }
 
   .content-wrapper::after {
@@ -1667,7 +1671,7 @@ textarea.modern-input {
   }
   
   /* 스크롤바 다크 모드 */
-  .text-list::-webkit-scrollbar-thumb {
+  .text-list:hover::-webkit-scrollbar-thumb {
     background: rgba(100, 116, 139, 0.5);
   }
   
