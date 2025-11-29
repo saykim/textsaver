@@ -1,6 +1,6 @@
 {
   "name": "Text Saver",
-  "version": "2.4",
+  "version": "2.4.4",
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,
@@ -28,8 +28,12 @@
     "activeTab",
     "alarms",
     "scripting",
-    "identity"
+    "identity",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "popup.html"
+  },
   "oauth2": {
     "client_id": "138881851224-6v532ehts4oh3l4j678566rjmnslb339.apps.googleusercontent.com",
     "scopes": [

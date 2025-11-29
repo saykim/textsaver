@@ -34,16 +34,23 @@ function getLocaleMessage(key, fallback, substitutions = []) {
 }
 
 // 보안: 입력 검증 및 Sanitization 함수들
+const BLOCKED_HTML_TAGS = ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'style'];
+
+function stripBlockedTags(input) {
+  return BLOCKED_HTML_TAGS.reduce((text, tag) => {
+    if (!text) return '';
+    const multilineTag = new RegExp(`<\\s*${tag}[^>]*>[\\s\\S]*?<\\s*\\/\\s*${tag}\\s*>`, 'gi');
+    const selfClosingTag = new RegExp(`<\\s*${tag}[^>]*\\/?>`, 'gi');
+    return text.replace(multilineTag, '').replace(selfClosingTag, '');
+  }, input);
+}
+
 function sanitizeText(input) {
   if (typeof input !== 'string') return '';
-  
-  return input
-    // HTML 태그 제거
-    .replace(/[<>]/g, '')
+
+  return stripBlockedTags(input)
     // JavaScript 스키마 제거
     .replace(/javascript:/gi, '')
-    // SQL 인젝션 방지 기본 패턴
-    .replace(/['";\\]/g, '')
     // 스크립트 관련 키워드 제거
     .replace(/(<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>)/gi, '')
     // 이벤트 핸들러 속성 제거
@@ -60,10 +67,8 @@ function sanitizeTitle(input) {
 function sanitizeTags(input) {
   if (typeof input !== 'string') return '';
   
-  return input
-    .replace(/[<>]/g, '')
+  return stripBlockedTags(input)
     .replace(/javascript:/gi, '')
-    .replace(/['";\\]/g, '')
     .slice(0, 500)
     .trim();
 }
@@ -240,42 +245,56 @@ function showInAppNotification(message, type = 'info', duration = 3000) {
 document.addEventListener('DOMContentLoaded', () => {
   // 팝업 창 크기 강제 설정 (Chrome 확장 프로그램 팝업 크기 문제 해결)
   function setPopupSize() {
-    const targetWidth = 500;
-    const targetHeight = 600; // 600px로 통일
-    
-    // 🔥 브라우저 스크롤바 완전 차단
-    document.documentElement.style.cssText = `
-      width: ${targetWidth}px !important;
-      height: ${targetHeight}px !important;
-      overflow: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-sizing: border-box !important;
-    `;
-    
-    document.body.style.cssText = `
-      width: ${targetWidth}px !important;
-      height: ${targetHeight}px !important;
-      overflow: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-sizing: border-box !important;
-    `;
-    
-    // 🔥 MutationObserver로 동적 변경 감지 및 차단
-    const observer = new MutationObserver(() => {
-      const container = document.querySelector('.container');
-      if (container && container.scrollHeight > 600) {
-        container.style.height = '600px';
-        container.style.overflow = 'hidden';
-      }
-    });
-    
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true
-    });
+    // 팝업 모드 감지: 창 크기로 판단
+    // - Chrome 확장 팝업은 최대 800x600px 제한
+    // - 사이드 패널은 브라우저 높이 전체를 사용하므로 더 큼
+    const isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
+
+    if (isPopup) {
+      document.body.classList.add('popup-mode');
+      
+      const targetWidth = 500;
+      const targetHeight = 600; // 600px로 통일
+      
+      // 🔥 브라우저 스크롤바 완전 차단 (팝업 모드에서만)
+      document.documentElement.style.cssText = `
+        width: ${targetWidth}px !important;
+        height: ${targetHeight}px !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      `;
+      
+      document.body.style.cssText = `
+        width: ${targetWidth}px !important;
+        height: ${targetHeight}px !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      `;
+      
+      // 🔥 MutationObserver로 동적 변경 감지 및 차단 (팝업 모드에서만)
+      const observer = new MutationObserver(() => {
+        const container = document.querySelector('.container');
+        if (container && container.scrollHeight > 600) {
+          container.style.height = '600px';
+          container.style.overflow = 'hidden';
+        }
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true
+      });
+    } else {
+      // 사이드 패널 모드: 클래스 제거 및 스타일 초기화 (반응형)
+      document.body.classList.remove('popup-mode');
+      document.documentElement.style.cssText = '';
+      document.body.style.cssText = '';
+    }
   }
   
   // 즉시 크기 설정
@@ -1226,30 +1245,44 @@ document.addEventListener('DOMContentLoaded', () => {
     return textItem;
   }
   
-  // 호버 시 내용 미리보기 설정 함수
+  // 호버 시 내용 미리보기 설정 함수 (딜레이 적용으로 고도화)
   function setupHoverPreview(textItem, contentWrapper) {
+    let hoverTimer = null;
+
     // 호버 시작 시
     textItem.addEventListener('mouseenter', () => {
       // 이미 펼쳐진 상태면 무시
       if (textItem.classList.contains('expanded')) return;
       
-      // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
-      requestAnimationFrame(() => {
-        const scrollHeight = contentWrapper.scrollHeight;
-        const computedStyle = getComputedStyle(contentWrapper);
-        const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
-        const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
-        const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
-        
-        // 실제 내용이 기본 높이보다 크면 동적으로 설정
-        if (scrollHeight > minPreviewHeight) {
-          contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
-        }
-      });
+      // 300ms 딜레이 후 펼침 (마우스가 스쳐 지나갈 때 번쩍거림 방지)
+      hoverTimer = setTimeout(() => {
+        // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
+        requestAnimationFrame(() => {
+          // 타이머 실행 시점에 다시 한 번 상태 확인
+          if (textItem.classList.contains('expanded')) return;
+
+          const scrollHeight = contentWrapper.scrollHeight;
+          const computedStyle = getComputedStyle(contentWrapper);
+          const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
+          const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
+          const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
+          
+          // 실제 내용이 기본 높이보다 크면 동적으로 설정 (아래로만 펼쳐짐)
+          if (scrollHeight > minPreviewHeight) {
+            contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
+          }
+        });
+      }, 300);
     });
     
     // 호버 종료 시 원래대로
     textItem.addEventListener('mouseleave', () => {
+      // 딜레이 중 마우스가 나가면 펼침 취소
+      if (hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+
       if (!textItem.classList.contains('expanded')) {
         contentWrapper.style.maxHeight = ''; // CSS 기본값으로 복원
       }
@@ -1383,8 +1416,8 @@ function initAutoCompleteToggle() {
     // 시각적 피드백
     showInAppNotification(
       enabled
-        ? getLocaleMessage('toggle_enabled_toast', '//' + ' 자동완성 기능이 활성화되었습니다')
-        : getLocaleMessage('toggle_disabled_toast', '//' + ' 자동완성 기능이 비활성화되었습니다'),
+        ? getLocaleMessage('toggle_enabled_toast', '자동완성 기능이 활성화되었습니다')
+        : getLocaleMessage('toggle_disabled_toast', '자동완성 기능이 비활성화되었습니다'),
       enabled ? 'success' : 'info'
     );
   });

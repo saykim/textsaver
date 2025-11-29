@@ -74,41 +74,54 @@
 }
 
 html {
-  width: 500px !important;
-  height: var(--popup-h) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+  width: 100%;
+  height: 100vh; /* 100% -> 100vh로 변경하여 뷰포트 높이 보장 */
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 500px !important;
-  height: var(--popup-h) !important;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
   color: var(--text-primary);
   background: var(--bg-secondary);
   line-height: 1.4;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden !important;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
-.container {
+/* 팝업 모드일 때만 고정 크기 적용 */
+body.popup-mode {
   width: 500px !important;
-  height: var(--popup-h) !important;
-  min-width: 500px;
-  min-height: var(--popup-h);
-  max-width: 500px;
-  max-height: var(--popup-h);
+  height: 600px !important;
+  overflow: hidden !important;
+}
+
+/* 사이드 패널 모드 (popup-mode 클래스가 없을 때) */
+body:not(.popup-mode) {
+  overflow-y: auto !important; /* 전체 세로 스크롤 허용 */
+  height: auto !important;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  /* min/max-width 제거하여 유연하게 */
   background: var(--bg-card);
   border: none;
   border-radius: 0;
-  overflow: hidden !important;
+  overflow: hidden !important; /* 기본값 (팝업용) */
   position: relative;
   display: grid;
   grid-template-rows: auto auto 1fr;
@@ -117,6 +130,23 @@ body {
     "tabs"
     "content";
   box-sizing: border-box;
+}
+
+/* 팝업 모드 컨테이너 크기 고정 */
+body.popup-mode .container {
+  width: 500px !important;
+  height: 600px !important;
+  min-width: 500px;
+  min-height: 600px;
+  max-width: 500px;
+  max-height: 600px;
+}
+
+/* 사이드 패널 모드 컨테이너 설정 */
+body:not(.popup-mode) .container {
+  height: auto !important;
+  overflow: visible !important;
+  display: block; /* Grid 대신 Block으로 자연스럽게 흐르도록 */
 }
 
 /* === 🎯 Header 영역 - Ultra Flat Professional === */
@@ -394,10 +424,11 @@ body {
   display: none;
   animation: slideIn 0.3s ease-out;
   padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
-  overflow: hidden !important;
+  overflow: hidden; /* !important 제거하여 사이드 패널에서 해제 가능하게 함 */
   height: 100%;
   box-sizing: border-box;
-  max-height: calc(var(--popup-h) - 100px); /* 🎯 높이 최적화 */
+  /* max-height 제거 또는 100%로 변경하여 사이드 패널 대응 */
+  max-height: 100%;
   min-height: 0;
   background: transparent; /* 🎯 배경 제거하여 완전 통합 */
 }
@@ -406,26 +437,69 @@ body {
   display: block;
 }
 
+/* 팝업 모드에서 탭 컨텐츠 높이 제한 */
+body.popup-mode .tab-content {
+  overflow: hidden !important;
+  max-height: calc(600px - 100px);
+}
+
+/* 사이드 패널 모드에서 탭 컨텐츠 설정 */
+body:not(.popup-mode) .tab-content {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
 /* 🎯 핵심 개선: viewTab과 bookmarkTab 전용 flex 레이아웃 */
 #viewTab.tab-content.active,
 #bookmarkTab.tab-content.active {
   display: flex;
   flex-direction: column;
-  overflow: hidden !important;
+  overflow: hidden; /* !important 제거 */
   padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
-  height: calc(var(--popup-h) - 100px) !important; /* 🎯 높이 최적화 */
-  max-height: calc(var(--popup-h) - 100px) !important;
+  height: 100% !important;
+  max-height: 100% !important;
   min-height: 0;
+}
+
+/* 사이드 패널에서는 Block으로 변경하여 전체 스크롤 사용 */
+body:not(.popup-mode) #viewTab.tab-content.active,
+body:not(.popup-mode) #bookmarkTab.tab-content.active {
+  display: block !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 /* 🎯 저장 탭과 설정 탭 전용 스타일 */
 #saveTab.tab-content.active,
 #settingsTab.tab-content.active {
   display: block;
-  overflow-y: auto !important;
+  overflow-y: auto !important; /* 팝업에서는 내부 스크롤 */
   padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
-  height: calc(var(--popup-h) - 100px) !important; /* 🎯 높이 최적화 */
-  max-height: calc(var(--popup-h) - 100px) !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+/* 사이드 패널에서는 전체 스크롤 사용 */
+body:not(.popup-mode) #saveTab.tab-content.active,
+body:not(.popup-mode) #settingsTab.tab-content.active {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* 팝업 모드 전용 높이 계산 */
+body.popup-mode #viewTab.tab-content.active,
+body.popup-mode #bookmarkTab.tab-content.active {
+  height: calc(600px - 100px) !important;
+  max-height: calc(600px - 100px) !important;
+}
+
+body.popup-mode #saveTab.tab-content.active,
+body.popup-mode #settingsTab.tab-content.active {
+  height: calc(600px - 100px) !important;
+  max-height: calc(600px - 100px) !important;
 }
 
 @keyframes slideIn {
@@ -523,20 +597,22 @@ body {
 .text-list {
   flex: 1; /* 🎯 남은 공간 모두 차지 */
   min-height: 0; /* 🎯 flex item 스크롤의 핵심 */
-  overflow-y: auto; /* 🎯 텍스트 영역만 스크롤 */
+  overflow-y: auto; /* 🎯 텍스트 영역만 스크롤 (팝업용) */
   overflow-x: hidden;
   padding-right: var(--space-1);
   padding-bottom: var(--space-4); /* 🎯 하단 여백 추가하여 마지막 아이템 공간 확보 */
   height: 100%; /* 부모의 남은 공간 모두 사용 */
 }
 
-/* 텍스트 리스트 전용 스크롤바 디자인 */
-/* === 📜 Custom Scrollbar (Hidden but Functional) === */
-::-webkit-scrollbar {
-  display: none; /* 🎯 Hide scrollbar globally */
+/* 사이드 패널에서는 전체 스크롤 사용 */
+body:not(.popup-mode) .text-list {
+  overflow: visible !important;
+  height: auto !important;
+  flex: none; /* Flex 해제 */
 }
 
-/* Remove old specific scrollbar styles to use global one */
+/* 텍스트 리스트 전용 스크롤바 디자인 */
+/* === 📜 Custom Scrollbar (Text List 전용) === */
 .text-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -572,8 +648,8 @@ body {
 .text-item:hover {
   background: var(--bg-surface);
   border-color: rgba(37, 99, 235, 0.3); /* Subtle blue border on hover */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); /* Enhanced shadow */
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 그림자만 부드럽게 적용 */
+  transform: none; /* 제목 위치 고정을 위해 이동 효과 제거 */
 }
 
 .text-title {
@@ -923,10 +999,22 @@ body {
   border-radius: var(--radius-sm);
   padding: var(--space-6);
   margin-bottom: 0;
-  max-height: calc(var(--popup-h) - 130px);
+  max-height: 100%; /* 사이드 패널에서는 유연하게 */
   overflow-y: auto;
   box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 팝업 모드에서 폼 카드 높이 제한 */
+body.popup-mode .form-card {
+  max-height: calc(600px - 130px);
+}
+
+/* 사이드 패널 모드에서 폼 카드 설정 */
+body:not(.popup-mode) .form-card {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 .form-group {
@@ -1057,17 +1145,6 @@ textarea.modern-input {
 
 .preview-tag:hover::after {
   opacity: 1;
-}
-
-@keyframes tagAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 /* === 🔘 Button Styles - Ultra Flat Professional === */
@@ -1312,7 +1389,6 @@ textarea.modern-input {
 }
 
 /* === 🚫 Empty States === */
-/* === 🚫 Empty States === */
 .empty-state {
   text-align: center;
   padding: var(--space-10) var(--space-6);
@@ -1437,6 +1513,22 @@ textarea.modern-input {
     color: var(--text-tertiary) !important;
   }
   
+  /* 설정 탭 제목(h4) 밝게 */
+  .setting-info h4 {
+    color: #f7fafc !important;
+  }
+  
+  /* 섹션 헤더 텍스트 밝게 */
+  .header-content h3,
+  .header-inline .header-title {
+    color: #f7fafc !important;
+  }
+  
+  .header-content p,
+  .header-inline .header-description {
+    color: #cbd5e0 !important;
+  }
+  
   body {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
   }
@@ -1508,6 +1600,15 @@ textarea.modern-input {
 
   .content-wrapper::after {
     background: linear-gradient(to top, var(--bg-card), transparent);
+  }
+  
+  /* 설정 카드 배경 및 텍스트 */
+  .settings-card {
+    background: rgba(45, 55, 72, 0.9);
+  }
+  
+  .settings-card.danger {
+    background: rgba(239, 68, 68, 0.08);
   }
 }
 
@@ -1584,5 +1685,3 @@ button, input, textarea, .tab-btn, .item-btn {
 .status-text {
   transition: var(--transition-fast);
 }
-
-/* content-wrapper는 위에 이미 정의되어 있으므로 중복 제거 */
