@@ -192,6 +192,18 @@ function getElementContentLength(element) {
   return value.length;
 }
 
+// selection API를 지원하는 input 타입인지 확인
+// HTML 스펙상 text, search, url, tel, password만 selectionStart/End 지원
+function supportsInputSelection(element) {
+  if (!element || element.isContentEditable) return false;
+  if (element.tagName === 'TEXTAREA') return true;
+  if (element.tagName === 'INPUT') {
+    const type = (element.type || 'text').toLowerCase();
+    return ['text', 'search', 'url', 'tel', 'password'].includes(type);
+  }
+  return false;
+}
+
 function storeCursorOffset(offset, element) {
   if (typeof offset === 'number' && !Number.isNaN(offset)) {
     const length = getElementContentLength(element);
@@ -769,8 +781,11 @@ function hideBookmarkSearchUI() {
     const length = getElementContentLength(element);
     const offset = TextSaverContentState.lastKnownCursorOffset ?? length;
     const nextOffset = Math.min(Math.max(offset, 0), length);
-    element.selectionStart = nextOffset;
-    element.selectionEnd = nextOffset;
+    // email, number 등 selection API를 지원하지 않는 input 타입 처리
+    if (supportsInputSelection(element)) {
+      element.selectionStart = nextOffset;
+      element.selectionEnd = nextOffset;
+    }
     try {
       element.focus({ preventScroll: true });
     } catch (_) {
@@ -833,7 +848,7 @@ function selectAndInsertBookmark(index) {
   const currentValue = isContentEditable ? element.textContent : (element.value ?? '');
   const cursorPos = isContentEditable
     ? getCursorPositionContentEditable(element)
-    : (typeof element.selectionStart === 'number' ? element.selectionStart : currentValue.length);
+    : (supportsInputSelection(element) && typeof element.selectionStart === 'number' ? element.selectionStart : currentValue.length);
 
   const textBeforeCursor = currentValue.slice(0, cursorPos);
   const match = textBeforeCursor.match(/\/\/([^\s\/]*)$/);
@@ -883,7 +898,10 @@ function selectAndInsertBookmark(index) {
 
     element.value = newText;
     const newCursorPos = startIndex + textToInsert.length;
-    element.selectionStart = element.selectionEnd = newCursorPos;
+    // email, number 등 selection API를 지원하지 않는 input 타입 처리
+    if (supportsInputSelection(element)) {
+      element.selectionStart = element.selectionEnd = newCursorPos;
+    }
     handled = true;
     syntheticEventNeeded = true;
   }
@@ -1108,10 +1126,14 @@ function insertTextAtCursor(inputElement, text) {
     }
   } else {
     const currentValue = inputElement.value ?? '';
-    const start = typeof inputElement.selectionStart === 'number' ? inputElement.selectionStart : currentValue.length;
-    const end = typeof inputElement.selectionEnd === 'number' ? inputElement.selectionEnd : currentValue.length;
+    // email, number 등 selection API를 지원하지 않는 input 타입 처리
+    const canSelect = supportsInputSelection(inputElement);
+    const start = canSelect && typeof inputElement.selectionStart === 'number' ? inputElement.selectionStart : currentValue.length;
+    const end = canSelect && typeof inputElement.selectionEnd === 'number' ? inputElement.selectionEnd : currentValue.length;
     inputElement.value = currentValue.substring(0, start) + text + currentValue.substring(end);
-    inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
+    if (canSelect) {
+      inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
+    }
     syntheticEventNeeded = true;
   }
 
@@ -1124,7 +1146,8 @@ function insertTextAtCursor(inputElement, text) {
     resultingOffset = getCursorPositionContentEditable(inputElement);
   } else {
     const length = getElementContentLength(inputElement);
-    const offset = typeof inputElement.selectionStart === 'number' ? inputElement.selectionStart : length;
+    const canSelect = supportsInputSelection(inputElement);
+    const offset = canSelect && typeof inputElement.selectionStart === 'number' ? inputElement.selectionStart : length;
     resultingOffset = Math.min(Math.max(offset, 0), length);
     storeCursorOffset(resultingOffset, inputElement);
   }
@@ -1252,7 +1275,7 @@ function handleInputEvent(event) {
   const text = target.isContentEditable ? target.textContent : (target.value ?? '');
   const cursorPos = target.isContentEditable
     ? getCursorPositionContentEditable(target)
-    : (typeof target.selectionStart === 'number' ? target.selectionStart : text.length);
+    : (supportsInputSelection(target) && typeof target.selectionStart === 'number' ? target.selectionStart : text.length);
 
   storeCursorOffset(cursorPos, target);
 

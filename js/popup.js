@@ -1484,36 +1484,71 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (driveBackupBtn) {
-    driveBackupBtn.addEventListener('click', () => {
-      chrome.storage.local.get('savedTexts', (result) => {
+    driveBackupBtn.addEventListener('click', async () => {
+      chrome.storage.local.get('savedTexts', async (result) => {
         const savedTexts = result.savedTexts || [];
         if (savedTexts.length === 0) {
           showInAppNotification('백업할 데이터가 없습니다.', 'info');
           return;
         }
 
-        const backupData = {
-          version: '1.0',
-          savedTexts: savedTexts,
-          backupDate: new Date().toISOString(),
-          device: navigator.userAgent
-        };
-
         driveBackupBtn.disabled = true;
-        driveBackupBtn.textContent = '백업 중...';
+        driveBackupBtn.textContent = '확인 중...';
 
-        GoogleDrive.uploadFile(backupData)
-          .then(() => {
-            showInAppNotification('구글 드라이브에 백업되었습니다.', 'success');
-          })
-          .catch(err => {
-            console.error('Backup failed', err);
-            showInAppNotification('백업에 실패했습니다.', 'error');
-          })
-          .finally(() => {
-            driveBackupBtn.disabled = false;
-            driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
-          });
+        try {
+          // 클라우드 백업 정보 조회 (타임스탬프 비교)
+          const cloudData = await GoogleDrive.getCloudBackupInfo();
+          
+          if (cloudData && cloudData.backupDate) {
+            const cloudDate = new Date(cloudData.backupDate);
+            const cloudItemCount = cloudData.savedTexts ? cloudData.savedTexts.length : 0;
+            const localItemCount = savedTexts.length;
+            
+            // 로컬 데이터의 마지막 수정 시간 계산 (가장 최근 수정된 항목 기준)
+            const localLastModified = savedTexts.reduce((latest, item) => {
+              const itemDate = new Date(item.updatedAt || item.createdAt || 0);
+              return itemDate > latest ? itemDate : latest;
+            }, new Date(0));
+            
+            // 클라우드가 더 최신인 경우 경고
+            if (cloudDate > localLastModified) {
+              const cloudDateStr = cloudDate.toLocaleString('ko-KR');
+              const localDateStr = localLastModified.toLocaleString('ko-KR');
+              
+              const confirmMsg = 
+                `⚠️ 클라우드 백업이 더 최신입니다.\n\n` +
+                `클라우드: ${cloudDateStr} (${cloudItemCount}개)\n` +
+                `로컬: ${localDateStr} (${localItemCount}개)\n\n` +
+                `정말 덮어쓰시겠습니까?`;
+              
+              if (!confirm(confirmMsg)) {
+                driveBackupBtn.disabled = false;
+                driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
+                showInAppNotification('백업이 취소되었습니다.', 'info');
+                return;
+              }
+            }
+          }
+
+          // 백업 진행
+          driveBackupBtn.textContent = '백업 중...';
+          
+          const backupData = {
+            version: '1.0',
+            savedTexts: savedTexts,
+            backupDate: new Date().toISOString(),
+            device: navigator.userAgent
+          };
+
+          await GoogleDrive.uploadFile(backupData);
+          showInAppNotification('구글 드라이브에 백업되었습니다.', 'success');
+        } catch (err) {
+          console.error('Backup failed', err);
+          showInAppNotification('백업에 실패했습니다.', 'error');
+        } finally {
+          driveBackupBtn.disabled = false;
+          driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
+        }
       });
     });
   }

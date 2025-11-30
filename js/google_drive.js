@@ -146,6 +146,27 @@ const GoogleDrive = {
       throw new Error('Download failed');
     }
     return await response.json();
+  },
+
+  // 클라우드 백업 정보 조회 (타임스탬프 비교용, 인터랙티브 없이)
+  getCloudBackupInfo: async () => {
+    try {
+      const token = await GoogleDrive.getAuthToken(false);
+      if (!token) return null;
+      
+      const existingFile = await GoogleDrive.findBackupFile(token);
+      if (!existingFile) return null;
+
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting cloud backup info:', error);
+      return null;
+    }
   }
 };
 
