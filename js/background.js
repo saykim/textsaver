@@ -1,3 +1,5 @@
+importScripts('utils.js');
+
 const PRESET_PROMPTS = [
   {
     title: 'CoT (Chain-of-Thought) 분석 템플릿',
@@ -89,7 +91,6 @@ function restorePresetTexts(sendResponse) {
 
 // 확장 프로그램이 설치될 때 초기 데이터 설정 및 단일 컨텍스트 메뉴 생성
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Text Saver: Extension installed/updated");
   
   // 컨텍스트 메뉴를 생성하기 전에 기존의 모든 메뉴 항목을 제거합니다.
   chrome.contextMenus.removeAll(() => {
@@ -110,7 +111,6 @@ chrome.runtime.onInstalled.addListener(() => {
       contexts: ["all"]
     });
     
-    console.log("Text Saver context menus created after removing all.");
   });
 
   // 저장된 텍스트 목록이 없으면 프리셋 텍스트 초기화
@@ -143,7 +143,6 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Service Worker 활성 상태 유지를 위한 keep-alive 로직 (Alarms API 사용으로 개선)
 chrome.runtime.onStartup.addListener(() => {
-  console.log("Text Saver: Browser startup - Service Worker activated");
   setupKeepAlive();
 
   chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
@@ -168,7 +167,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAlive') {
     // 간단한 storage 체크로 Service Worker 유지
     chrome.storage.local.get(['keepAlive'], () => {
-      console.log("Text Saver: Keep-alive check");
+      // no-op: 호출 자체로 Service Worker 유지
     });
   }
 });
@@ -178,8 +177,6 @@ setupKeepAlive();
 
 // 키보드 단축키 처리 (Ctrl+Shift+T)
 chrome.commands.onCommand.addListener((command) => {
-      console.log('Text Saver //: Command received:', command);
-
   if (command === 'toggle-auto-complete') {
     // 현재 활성 탭에 토글 메시지 전송
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -190,11 +187,7 @@ chrome.commands.onCommand.addListener((command) => {
           if (chrome.runtime.lastError) {
             const errorMsg = chrome.runtime.lastError.message || '';
             // bfcache 오류는 조용히 무시
-            if (!errorMsg.includes('back/forward cache')) {
-              console.log('Content script not ready:', errorMsg);
-            }
           } else {
-            console.log('Quick toggle executed:', response);
             // 🎯 아이콘 상태 업데이트 (임시 뱃지 표시)
             if (response && typeof response.newState === 'boolean') {
               updateExtensionIcon(response.newState, true); // showTemporaryBadge=true 추가
@@ -219,8 +212,8 @@ chrome.runtime.onConnect.addListener((port) => {
       if (errorMsg.includes('back/forward cache')) {
         return;
       }
-      // 다른 오류는 로그
-      console.warn('Text Saver: Port disconnect error:', errorMsg);
+      // 다른 오류는 오류로 기록
+      console.error('Text Saver: Port disconnect error:', errorMsg);
     }
     // No-op: the listener exists to keep the service worker alive while the page is active.
   });
@@ -246,7 +239,6 @@ function updateExtensionIcon(enabled, showTemporaryBadge = false) {
     } else {
       setPermanentIconState(enabled);
     }
-    console.log('Text Saver //: Icon updated, enabled:', enabled, 'temporary:', showTemporaryBadge);
   } catch (e) {
     console.error('Text Saver //: Error updating icon:', e);
   }
@@ -290,14 +282,11 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.autoCompleteEnabled) {
     const enabled = changes.autoCompleteEnabled.newValue;
     updateExtensionIcon(enabled);
-    console.log('Text Saver //: Auto-complete setting changed to:', enabled);
   }
 });
 
 // 컨텍스트 메뉴 클릭 이벤트 처리 (개선된 버전)
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  console.log("[Text Saver] Context menu clicked:", info, tab);
-
   // 사이드 패널 열기 처리
   if (info.menuItemId === "openSidePanel") {
     // Chrome 116+ 사이드 패널 열기 API 사용
@@ -309,8 +298,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             .catch(error => console.error("Error opening side panel:", error));
         }
       });
-    } else {
-      console.warn("Side Panel API not supported in this browser version.");
     }
     return;
   }
@@ -338,8 +325,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return;
   }
 
-  console.log("[Text Saver] 'saveSelectedTextWithUrlAndAutoTags' action triggered.");
-
   // 데이터 준비
   const currentTime = new Date();
   const dateTag = `${currentTime.getFullYear()}/${String(currentTime.getMonth() + 1).padStart(2, '0')}/${String(currentTime.getDate()).padStart(2, '0')}`;
@@ -366,12 +351,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
   // 저장 처리
   chrome.storage.local.get({ savedTexts: [] }, (result) => {
-    console.log("[Text Saver] Current savedTexts:", result.savedTexts);
     const savedTexts = [...result.savedTexts, newTextEntry];
 
     chrome.storage.local.set({ savedTexts }, () => {
-      console.log("[Text Saver] Text saved successfully");
-
       // 뱃지 표시 (통합 함수 사용)
       try {
         setBadge('저장', '#4CAF50', 'Text Saver: 텍스트 저장됨');
@@ -391,29 +373,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   });
 });
 
-// 주석 처리된 코드 제거 완료 
 
 // 검색 결과 최대 개수 상수
 const MAX_SEARCH_RESULTS = 50;
 
 // 최신순 정렬 함수 (재사용 가능하도록 분리)
-function getItemTimestamp(item) {
-  if (!item || typeof item !== 'object') {
-    return 0;
-  }
-  const source = item.updatedAt || item.createdAt;
-  if (!source) {
-    return 0;
-  }
-  const timestamp = new Date(source).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function sortByRecency(items) {
-  if (!Array.isArray(items)) return [];
-
-  return items.sort((a, b) => getItemTimestamp(b) - getItemTimestamp(a));
-}
 
 function computeMatchScore(value, query) {
   if (!query || typeof value !== 'string') {
@@ -522,8 +486,6 @@ function filterItems(items, query) {
 
 // 메시지 리스너 (개선된 에러 처리 및 모듈화)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("Text Saver: Message received:", request.action);
-
   try {
     // 검색 기능
     if (request.action === "searchItems") {
@@ -544,7 +506,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     // 알 수 없는 액션
-    console.warn("Text Saver: Unknown action:", request.action);
+    console.error("Text Saver: Unknown action:", request.action);
     sendResponse({ error: "Unknown action" });
 
   } catch (error) {
@@ -585,8 +547,6 @@ function handleSearchRequest(request, sendResponse) {
       const filteredItems = filterItems(savedTexts, query);
       const sortedItems = sortByRelevance(filteredItems, query);
       const limitedItems = sortedItems.slice(0, MAX_SEARCH_RESULTS);
-
-      console.log(`Text Saver: Search completed. Query: "${query}", Results: ${limitedItems.length}`);
       sendResponse({ items: limitedItems });
     } catch (error) {
       console.error("Text Saver: Error processing search:", error);

@@ -23,6 +23,13 @@ const detectedLocale = (chrome?.i18n?.getUILanguage?.() || navigator.language ||
 const isKoreanLocale = detectedLocale.startsWith('ko');
 const useEnglishLocale = !isKoreanLocale && !!(chrome?.i18n?.getMessage);
 
+// 전역 안전장치: 외부 리스너에서 참조 시 함수 미정의 에러 방지
+if (typeof window !== 'undefined') {
+  window.loadTextList = window.loadTextList || function () {};
+  window.loadBookmarkList = window.loadBookmarkList || function () {};
+  window.updateCounters = window.updateCounters || function () {};
+}
+
 function getLocaleMessage(key, fallback, substitutions = []) {
   if (!useEnglishLocale) return fallback;
   try {
@@ -567,7 +574,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
   // 텍스트 목록 로드 함수
   function loadTextList(searchQuery = '') {
     chrome.storage.local.get('savedTexts', (result) => {
@@ -590,7 +596,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
       
-      filteredTexts.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+      try {
+        if (typeof compareByRecency === 'function') {
+          filteredTexts.sort(compareByRecency);
+        } else {
+          console.error('compareByRecency function not found');
+          // Fallback sort
+          filteredTexts.sort((a, b) => {
+            const timeA = new Date(a.updatedAt || a.createdAt).getTime() || 0;
+            const timeB = new Date(b.updatedAt || b.createdAt).getTime() || 0;
+            return timeB - timeA;
+          });
+        }
+      } catch (e) {
+        console.error('Error sorting texts:', e);
+      }
       
       if (filteredTexts.length === 0) {
         const emptyMessage = searchQuery
@@ -643,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       emptyBookmarkMessage.style.display = 'none';
-      bookmarkedTexts.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+      bookmarkedTexts.sort(compareByRecency);
       
       bookmarkedTexts.forEach(text => {
         const textItem = createTextItem(text, true);
@@ -651,6 +671,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // 전역 스코프에 노출 (이벤트 리스너 접근용)
+  window.updateCounters = updateCounters;
+  window.loadTextList = loadTextList;
+  window.loadBookmarkList = loadBookmarkList;
   
   // 텍스트 수정 함수
   function editText(textId) {
@@ -816,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 원본과 sanitized 버전이 크게 다르면 제외
         if (text.title.length - sanitizedTitle.length > 10 || 
             text.content.length - sanitizedContent.length > 50) {
-          console.warn('보안상 위험한 항목이 필터링되었습니다:', text.title);
+          console.error('보안상 위험한 항목이 필터링되었습니다:', text.title);
           invalidIndexes.push(idx + 1);
           return;
         }
@@ -1384,11 +1409,9 @@ function initAutoCompleteToggle() {
         chrome.tabs.sendMessage(tabs[0].id, {
           action: 'toggleAutoComplete',
           enabled: enabled
-        }, (response) => {
+        }, () => {
           if (chrome.runtime.lastError) {
-            console.log('Content script not ready:', chrome.runtime.lastError.message);
-          } else {
-            console.log('Toggle message sent successfully:', response);
+            return;
           }
         });
       }
@@ -1405,11 +1428,9 @@ function initAutoCompleteToggle() {
       action: 'updateIcon',
       enabled: enabled,
       showTemporary: true
-    }, (response) => {
+    }, () => {
       if (chrome.runtime.lastError) {
-        console.log('Background script message failed:', chrome.runtime.lastError.message);
-      } else {
-        console.log('Icon update message sent:', response);
+        return;
       }
     });
     
@@ -1589,4 +1610,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
   }
+  // 저장소 변경 감지하여 UI 즉시 갱신
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    try {
+      if (areaName === 'local' && changes.savedTexts) {
+        console.log('Storage changed, updating UI...');
+        // 현재 검색어 상태 유지
+        const searchInputEl = document.getElementById('searchInput');
+        const currentSearch = searchInputEl ? searchInputEl.value : '';
+
+        const refreshLists = () => {
+          if (typeof window.loadTextList === 'function') {
+            window.loadTextList(currentSearch);
+          }
+
+          // 북마크 탭이 활성화되어 있다면 북마크 목록도 갱신
+          const bookmarkTabEl = document.getElementById('bookmarkTab');
+          if (bookmarkTabEl && bookmarkTabEl.classList.contains('active') && typeof window.loadBookmarkList === 'function') {
+            window.loadBookmarkList();
+          }
+
+          if (typeof window.updateCounters === 'function') {
+            window.updateCounters();
+          }
+        };
+
+        // 즉시 시도
+        refreshLists();
+        // 초기화 지연 상황에 대비한 재시도
+        if (typeof window.loadTextList !== 'function') {
+          setTimeout(refreshLists, 150);
+        }
+      }
+    } catch (e) {
+      console.error('Error in storage listener:', e);
+    }
+  });
 });

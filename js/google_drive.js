@@ -13,7 +13,6 @@ const GoogleDrive = {
         if (chrome.runtime.lastError || !token) {
           // 2. 실패 시 (Edge 등) Web Auth Flow 시도
           if (interactive) {
-            console.log('Native auth failed, trying Web Auth Flow:', chrome.runtime.lastError);
             GoogleDrive.getWebAuthToken(interactive).then(resolve).catch(reject);
           } else {
             reject(chrome.runtime.lastError);

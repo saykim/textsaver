@@ -1,7 +1,7 @@
 // This script will handle detecting '//' in input fields,
 // displaying the bookmark search UI, and interacting with the background script.
 
-// console.log("Text Saver Extension: content.js loaded");
+
 
 // 전역 변수 (모듈 패턴으로 캡슐화)
 const TextSaverContentState = {
@@ -42,42 +42,9 @@ const textSaverGlobal = window.__textSaverContentHooks || (window.__textSaverCon
   observers: []
 });
 
-function sanitizeForDisplay(input) {
-  if (typeof input !== 'string') {
-    return '';
-  }
-  return input
-    .replace(/[<>]/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
-function truncateText(text, limit) {
-  if (!text) {
-    return '';
-  }
-  if (typeof limit !== 'number' || limit <= 0) {
-    return text;
-  }
-  return text.length > limit ? `${text.slice(0, limit)}…` : text;
-}
 
-function getItemTimestamp(item) {
-  if (!item || typeof item !== 'object') {
-    return 0;
-  }
-  const source = item.updatedAt || item.createdAt;
-  if (!source) {
-    return 0;
-  }
-  const timestamp = new Date(source).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
 
-function sortByRecencyDesc(a, b) {
-  return getItemTimestamp(b) - getItemTimestamp(a);
-}
 
 function normalizeEditableTarget(target) {
   if (!target) return null;
@@ -179,7 +146,7 @@ function initPerplexitySupport() {
       textSaverGlobal.observers.push(observer);
     }
   } catch (error) {
-    console.warn('Text Saver //: Failed to initialize Perplexity support', error);
+    console.error('Text Saver //: Failed to initialize Perplexity support', error);
   }
 }
 
@@ -242,7 +209,7 @@ function safeRuntimeSendMessage(message, callback) {
                   const retryErrorMsg = chrome.runtime.lastError.message || '';
                   if (!retryErrorMsg.includes(BF_CACHE_ERROR_SNIPPET)) {
                     // bfcache 오류가 아닌 경우에만 로그
-                    console.warn('Text Saver //: Retry failed:', retryErrorMsg);
+                    console.error('Text Saver //: Retry failed:', retryErrorMsg);
                   }
                   if (callback) callback(null);
                 } else {
@@ -271,7 +238,7 @@ function safeRuntimeSendMessage(message, callback) {
 
     // bfcache 오류가 아닌 경우에만 경고 표시
     if (!isBfCacheError) {
-      console.warn('Text Saver //: Message send failed, retrying...', errorMessage);
+      console.error('Text Saver //: Message send failed, retrying...', errorMessage);
       showContextInvalidWarning();
     } else {
       scheduleKeepAliveReconnect();
@@ -284,7 +251,7 @@ function safeRuntimeSendMessage(message, callback) {
           if (chrome.runtime.lastError) {
             const finalErrorMsg = chrome.runtime.lastError.message || '';
             if (!finalErrorMsg.includes(BF_CACHE_ERROR_SNIPPET)) {
-              console.warn('Text Saver //: Final retry failed:', finalErrorMsg);
+              console.error('Text Saver //: Final retry failed:', finalErrorMsg);
             }
             if (callback) callback(null);
           } else {
@@ -402,7 +369,7 @@ function ensureKeepAliveConnection() {
       scheduleKeepAliveReconnect();
     });
   } catch (error) {
-    console.warn('Text Saver //: Keep-alive connection failed', error);
+    console.error('Text Saver //: Keep-alive connection failed', error);
     keepAlivePort = null;
 
     const errorMessage = String(error?.message || '');
@@ -468,12 +435,9 @@ window.addEventListener('pagehide', (event) => {
 
 // 메시지 패싱 리스너 (개선된 버전)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('TextSaver //: Message received:', request);
-
   const handlers = {
     toggleAutoComplete: () => {
       TextSaverContentState.autoCompleteEnabled = request.enabled;
-      console.log('TextSaver //: Auto-complete toggled to:', request.enabled);
 
       if (!request.enabled) hideBookmarkSearchUI();
       showToggleNotification(request.enabled);
@@ -554,7 +518,7 @@ function loadDefaultSuggestions(targetElement) {
 
     const bookmarked = savedTexts
       .filter(item => item && item.isBookmarked)
-      .sort(sortByRecencyDesc)
+      .sort(compareByRecency)
       .slice(0, bookmarkedLimit);
 
     const remainingSlots = Math.max(0, effectiveTotalLimit - bookmarked.length);
@@ -565,7 +529,7 @@ function loadDefaultSuggestions(targetElement) {
 
     const nonBookmarked = savedTexts
       .filter(item => item && !item.isBookmarked)
-      .sort(sortByRecencyDesc)
+      .sort(compareByRecency)
       .slice(0, nonBookmarkedLimit);
 
     const suggestions = [];
@@ -632,7 +596,7 @@ const debouncedSearchBookmarks = debounce((rawQuery) => {
   const success = safeRuntimeSendMessage({ action: 'searchItems', query }, (response) => {
     // response가 null이면 에러 발생한 것
     if (response === null) {
-      console.warn('Text Saver //: Search failed due to extension context error');
+      console.error('Text Saver //: Search failed due to extension context error');
       TextSaverContentState.searchResults = [];
       TextSaverContentState.lastQuerySent = null;
       showContextInvalidWarning();
@@ -666,7 +630,6 @@ const debouncedSearchBookmarks = debounce((rawQuery) => {
   if (!success) {
     // 메시지 전송 자체가 실패한 경우 (재시도 중)
     TextSaverContentState.lastQuerySent = null;
-    console.log('Text Saver //: Search message sending in progress...');
   }
 }, DEBOUNCE_DELAY);
 
@@ -811,13 +774,13 @@ function selectAndInsertBookmark(index) {
   if (!TextSaverContentState.autoCompleteEnabled ||
       index < 0 ||
       index >= TextSaverContentState.searchResults.length) {
-    console.warn('Text Saver //: selectAndInsertBookmark - Invalid state or index');
+    console.error('Text Saver //: selectAndInsertBookmark - Invalid state or index');
     return;
   }
 
   const item = TextSaverContentState.searchResults[index];
   if (!item) {
-    console.warn('Text Saver //: selectAndInsertBookmark - Item not found');
+    console.error('Text Saver //: selectAndInsertBookmark - Item not found');
     return;
   }
 
@@ -831,7 +794,7 @@ function selectAndInsertBookmark(index) {
 
   let element = normalizeEditableTarget(TextSaverContentState.currentInputElement);
   if (!element || !document.contains(element)) {
-    console.warn('Text Saver //: No valid input element found for insertion');
+    console.error('Text Saver //: No valid input element found for insertion');
     hideBookmarkSearchUI();
     return;
   }
@@ -1082,7 +1045,7 @@ function replaceContentEditableToken(element, currentText, startIndex, endIndex,
     selection.collapseToEnd();
     return { success: true, syntheticEventNeeded: false };
   } catch (error) {
-    console.warn('Text Saver //: Range replacement failed, applying manual fallback.', error);
+    console.error('Text Saver //: Range replacement failed, applying manual fallback.', error);
     return { success: false, syntheticEventNeeded: true };
   }
 }
@@ -1428,3 +1391,14 @@ document.addEventListener('focusin', (event) => {
 // console.log("TextSaver //: Content script with message passing support loaded."); 
 
 initPerplexitySupport();
+
+// 저장소 변경 감지하여 캐시 초기화 (즉시 반영)
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes.savedTexts) {
+    queryResultCache.clear();
+    // 현재 검색 UI가 열려있다면 갱신 시도 (선택적)
+    if (TextSaverContentState.bookmarkSearchUI && TextSaverContentState.lastQuerySent) {
+      handleSearch(TextSaverContentState.lastQuerySent);
+    }
+  }
+});
