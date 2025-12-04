@@ -109,6 +109,9 @@ body.popup-mode {
 
 /* 사이드 패널 모드 (popup-mode 클래스가 없을 때) */
 body:not(.popup-mode) {
+  width: 100% !important; /* 🎯 사이드패널 너비에 맞춤 */
+  min-width: 320px; /* 최소 너비 보장 */
+  max-width: 100%; /* 최대 너비 제한 없음 */
   overflow-y: auto !important; /* 전체 세로 스크롤 허용 */
   height: auto !important;
   min-height: 100vh;
@@ -117,7 +120,6 @@ body:not(.popup-mode) {
 .container {
   width: 100%;
   height: 100%;
-  /* min/max-width 제거하여 유연하게 */
   background: var(--bg-card);
   border: none;
   border-radius: 0;
@@ -125,7 +127,7 @@ body:not(.popup-mode) {
   position: relative;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  grid-template-areas: 
+  grid-template-areas:
     "header"
     "tabs"
     "content";
@@ -144,6 +146,9 @@ body.popup-mode .container {
 
 /* 사이드 패널 모드 컨테이너 설정 */
 body:not(.popup-mode) .container {
+  width: 100% !important; /* 🎯 사이드패널 너비 100% */
+  min-width: 320px; /* 최소 너비 */
+  max-width: 100%; /* 제한 없음 */
   height: auto !important;
   overflow: visible !important;
   display: block; /* Grid 대신 Block으로 자연스럽게 흐르도록 */

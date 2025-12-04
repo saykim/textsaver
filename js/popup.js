@@ -251,18 +251,32 @@ function showInAppNotification(message, type = 'info', duration = 3000) {
 
 document.addEventListener('DOMContentLoaded', () => {
   // 팝업 창 크기 강제 설정 (Chrome 확장 프로그램 팝업 크기 문제 해결)
-  function setPopupSize() {
-    // 팝업 모드 감지: 창 크기로 판단
-    // - Chrome 확장 팝업은 최대 800x600px 제한
-    // - 사이드 패널은 브라우저 높이 전체를 사용하므로 더 큼
-    const isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
+  async function setPopupSize() {
+    let isPopup = false;
+
+    // 🎯 개선된 팝업/사이드패널 감지 로직
+    try {
+      // 1. Chrome의 sidePanel API로 확인 (가장 정확)
+      if (chrome?.sidePanel?.getOptions) {
+        const options = await chrome.sidePanel.getOptions({ tabId: (await chrome.tabs.getCurrent())?.id });
+        isPopup = !options?.enabled;
+      } else {
+        // 2. Fallback: 창 크기로 판단
+        // - Chrome 확장 팝업: 작은 크기 (최대 800x600px)
+        // - 사이드 패널: 브라우저 높이 전체 사용
+        isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
+      }
+    } catch (e) {
+      // API 에러 시 창 크기로 판단
+      isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
+    }
 
     if (isPopup) {
       document.body.classList.add('popup-mode');
-      
+
       const targetWidth = 500;
-      const targetHeight = 600; // 600px로 통일
-      
+      const targetHeight = 600;
+
       // 🔥 브라우저 스크롤바 완전 차단 (팝업 모드에서만)
       document.documentElement.style.cssText = `
         width: ${targetWidth}px !important;
@@ -272,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 0 !important;
         box-sizing: border-box !important;
       `;
-      
+
       document.body.style.cssText = `
         width: ${targetWidth}px !important;
         height: ${targetHeight}px !important;
@@ -281,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 0 !important;
         box-sizing: border-box !important;
       `;
-      
+
       // 🔥 MutationObserver로 동적 변경 감지 및 차단 (팝업 모드에서만)
       const observer = new MutationObserver(() => {
         const container = document.querySelector('.container');
@@ -290,23 +304,41 @@ document.addEventListener('DOMContentLoaded', () => {
           container.style.overflow = 'hidden';
         }
       });
-      
+
       observer.observe(document.body, {
         childList: true,
         subtree: true,
         attributes: true
       });
     } else {
-      // 사이드 패널 모드: 클래스 제거 및 스타일 초기화 (반응형)
+      // 🎯 사이드 패널 모드: 반응형 설정
       document.body.classList.remove('popup-mode');
-      document.documentElement.style.cssText = '';
-      document.body.style.cssText = '';
+
+      // 스타일 초기화하여 CSS가 자연스럽게 적용되도록
+      document.documentElement.style.cssText = `
+        width: 100% !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      `;
+
+      document.body.style.cssText = `
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      `;
     }
   }
-  
+
   // 즉시 크기 설정
   setPopupSize();
-  
+
   // 페이지 로드 완료 후에도 한 번 더 설정
   setTimeout(setPopupSize, 100);
   
