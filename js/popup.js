@@ -23,11 +23,23 @@ const detectedLocale = (chrome?.i18n?.getUILanguage?.() || navigator.language ||
 const isKoreanLocale = detectedLocale.startsWith('ko');
 const useEnglishLocale = !isKoreanLocale && !!(chrome?.i18n?.getMessage);
 
+// 🚀 CP 버전 안정성 개선: URL 파라미터 기반 모드 감지
+const layoutParams = new URLSearchParams(window.location.search || '');
+const forcedViewMode = layoutParams.get('view');
+const FORCE_POPUP_MODE = forcedViewMode === 'popup';
+const FORCE_PANEL_MODE = forcedViewMode === 'panel';
+
+// 🚀 성능 최적화: 데이터 캐싱 및 변경 추적
+let savedTextsCache = null;
+let dataChanged = true;
+let searchDebounceTimer = null;
+const SEARCH_DEBOUNCE_DELAY = 250;
+
 // 전역 안전장치: 외부 리스너에서 참조 시 함수 미정의 에러 방지
 if (typeof window !== 'undefined') {
-  window.loadTextList = window.loadTextList || function () {};
-  window.loadBookmarkList = window.loadBookmarkList || function () {};
-  window.updateCounters = window.updateCounters || function () {};
+  window.loadTextList = window.loadTextList || function () { };
+  window.loadBookmarkList = window.loadBookmarkList || function () { };
+  window.updateCounters = window.updateCounters || function () { };
 }
 
 function getLocaleMessage(key, fallback, substitutions = []) {
@@ -73,7 +85,7 @@ function sanitizeTitle(input) {
 
 function sanitizeTags(input) {
   if (typeof input !== 'string') return '';
-  
+
   return stripBlockedTags(input)
     .replace(/javascript:/gi, '')
     .slice(0, 500)
@@ -84,17 +96,17 @@ function validateTextData(data) {
   if (!data || typeof data !== 'object') return false;
 
   if (!data.title || typeof data.title !== 'string' ||
-      data.title.length === 0 || data.title.length > 200) {
+    data.title.length === 0 || data.title.length > 200) {
     return false;
   }
 
   if (!data.content || typeof data.content !== 'string' ||
-      data.content.length === 0 || data.content.length > 10000) {
+    data.content.length === 0 || data.content.length > 10000) {
     return false;
   }
 
   if (data.tags && (!Array.isArray(data.tags) ||
-      data.tags.some(tag => typeof tag !== 'string' || tag.length > 50))) {
+    data.tags.some(tag => typeof tag !== 'string' || tag.length > 50))) {
     return false;
   }
 
@@ -195,10 +207,10 @@ function updateTagPreview() {
   const tagInput = document.getElementById('tagInput');
   const tagPreview = document.getElementById('tagPreview');
   if (!tagInput || !tagPreview) return;
-  
+
   const tagsString = tagInput.value.trim();
   tagPreview.textContent = '';
-  
+
   if (tagsString) {
     const tags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
     tags.forEach(tag => {
@@ -220,7 +232,7 @@ function showInAppNotification(message, type = 'info', duration = 3000) {
   // 새로운 구조: notification-content 안의 요소들 업데이트
   const notificationIcon = inAppNotification.querySelector('.notification-icon');
   const notificationText = inAppNotification.querySelector('.notification-text');
-  
+
   if (!notificationIcon || !notificationText) return;
 
   // 기본 클래스 리셋
@@ -250,98 +262,36 @@ function showInAppNotification(message, type = 'info', duration = 3000) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 팝업 창 크기 강제 설정 (Chrome 확장 프로그램 팝업 크기 문제 해결)
-  async function setPopupSize() {
-    let isPopup = false;
-
-    // 🎯 개선된 팝업/사이드패널 감지 로직
-    try {
-      // 1. Chrome의 sidePanel API로 확인 (가장 정확)
-      if (chrome?.sidePanel?.getOptions) {
-        const options = await chrome.sidePanel.getOptions({ tabId: (await chrome.tabs.getCurrent())?.id });
-        isPopup = !options?.enabled;
-      } else {
-        // 2. Fallback: 창 크기로 판단
-        // - Chrome 확장 팝업: 작은 크기 (최대 800x600px)
-        // - 사이드 패널: 브라우저 높이 전체 사용
-        isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
-      }
-    } catch (e) {
-      // API 에러 시 창 크기로 판단
-      isPopup = window.innerWidth <= 600 && window.innerHeight <= 700;
+  // 🚀 CP 버전 안정성 개선: 팝업/사이드 패널 컨텍스트를 명시적으로 감지
+  function applyLayoutMode() {
+    if (FORCE_POPUP_MODE) {
+      document.body.classList.add('popup-mode');
+      return;
+    }
+    if (FORCE_PANEL_MODE) {
+      document.body.classList.remove('popup-mode');
+      return;
     }
 
-    if (isPopup) {
+    // 구버전/fallback: 화면 크기에 따라 추정
+    const isPopupViewport = window.innerWidth <= 600 && window.innerHeight <= 700;
+    if (isPopupViewport) {
       document.body.classList.add('popup-mode');
-
-      const targetWidth = 500;
-      const targetHeight = 600;
-
-      // 🔥 브라우저 스크롤바 완전 차단 (팝업 모드에서만)
-      document.documentElement.style.cssText = `
-        width: ${targetWidth}px !important;
-        height: ${targetHeight}px !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      `;
-
-      document.body.style.cssText = `
-        width: ${targetWidth}px !important;
-        height: ${targetHeight}px !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      `;
-
-      // 🔥 MutationObserver로 동적 변경 감지 및 차단 (팝업 모드에서만)
-      const observer = new MutationObserver(() => {
-        const container = document.querySelector('.container');
-        if (container && container.scrollHeight > 600) {
-          container.style.height = '600px';
-          container.style.overflow = 'hidden';
-        }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true
-      });
     } else {
-      // 🎯 사이드 패널 모드: 반응형 설정
       document.body.classList.remove('popup-mode');
-
-      // 스타일 초기화하여 CSS가 자연스럽게 적용되도록
-      document.documentElement.style.cssText = `
-        width: 100% !important;
-        height: 100% !important;
-        overflow-y: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      `;
-
-      document.body.style.cssText = `
-        width: 100% !important;
-        height: auto !important;
-        min-height: 100vh !important;
-        overflow-y: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      `;
     }
   }
 
-  // 즉시 크기 설정
-  setPopupSize();
+  // 초기화 시 한 번 실행
+  applyLayoutMode();
 
-  // 페이지 로드 완료 후에도 한 번 더 설정
-  setTimeout(setPopupSize, 100);
-  
+  // 명시적 컨텍스트가 없을 때만 리사이즈 감시
+  if (!FORCE_POPUP_MODE && !FORCE_PANEL_MODE) {
+    window.addEventListener('resize', () => {
+      requestAnimationFrame(applyLayoutMode);
+    });
+  }
+
   // UI 요소 참조
   const saveTabBtn = document.getElementById('saveTabBtn');
   const viewTabBtn = document.getElementById('viewTabBtn');
@@ -373,12 +323,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const restorePresetsBtn = document.getElementById('restorePresetsBtn');
   const resetDataBtn = document.getElementById('resetDataBtn');
   applyLocaleText();
-  
+
   // Auto-complete toggle 관련 요소 (전역 변수 초기화)
   autoCompleteToggle = document.getElementById('autoCompleteToggle');
   featureStatusText = document.getElementById('featureStatusText');
   inAppNotification = document.getElementById('inAppNotification');
-  
+
   // 자동 저장 UI 요소 추가
   const autoSaveStatus = document.createElement('div');
   autoSaveStatus.className = 'auto-save-status';
@@ -391,38 +341,38 @@ document.addEventListener('DOMContentLoaded', () => {
   autoSaveStatus.appendChild(statusText);
   // Save 버튼 바로 뒤에 자동 저장 상태 표시 추가
   saveBtn.insertAdjacentElement('afterend', autoSaveStatus);
-  
+
   // 임시 저장 데이터 복원
   restoreTempData();
-  
+
   // 자동 저장 타이머 시작
   startAutoSave();
-  
+
   // Auto-complete 토글 초기화 및 이벤트 리스너
   initAutoCompleteToggle();
-  
+
   // 탭 클릭 이벤트 리스너
   saveTabBtn.addEventListener('click', () => switchTab(saveTabBtn, saveTab));
   viewTabBtn.addEventListener('click', () => switchTab(viewTabBtn, viewTab));
   bookmarkTabBtn.addEventListener('click', () => switchTab(bookmarkTabBtn, bookmarkTab));
   settingsTabBtn.addEventListener('click', () => switchTab(settingsTabBtn, settingsTab));
-  
+
   // 탭 전환 함수
   function switchTab(tabBtn, tabContent) {
     // 모든 탭 버튼에서 active 클래스 제거
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    
+
     // 모든 탭 컨텐츠에서 active 클래스 제거
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.remove('active');
     });
-    
+
     // 선택한 탭 활성화
     tabBtn.classList.add('active');
     tabContent.classList.add('active');
-    
+
     // 보기 탭으로 전환했을 때 텍스트 목록 로드
     if (tabContent === viewTab) {
       loadTextList();
@@ -430,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       loadBookmarkList();
     }
   }
-  
+
   // 태그 입력 이벤트 리스너
   tagInput.addEventListener('input', updateTagPreview);
   tagInput.addEventListener('keydown', (e) => {
@@ -438,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(updateTagPreview, 0);
     }
   });
-  
+
   // 입력 필드 초기화 함수
   function resetForm() {
     titleInput.value = '';
@@ -446,36 +396,36 @@ document.addEventListener('DOMContentLoaded', () => {
     tagInput.value = '';
     tagPreview.textContent = '';
     editingId.value = '';
-    
+
     // 새로운 HTML 구조에 맞게 버튼 텍스트 업데이트
     const btnText = saveBtn.querySelector('.btn-content span');
     if (btnText) {
       btnText.textContent = getLocaleMessage('button_save', '저장하기');
     }
   }
-  
+
   // 텍스트 저장 함수
   function saveText() {
     // 보안: 입력값 sanitization
     const rawTitle = titleInput.value.trim();
     const rawText = textInput.value.trim();
     const rawTagsString = tagInput.value.trim();
-    
+
     const title = sanitizeTitle(rawTitle);
     const text = sanitizeText(rawText);
     const tagsString = sanitizeTags(rawTagsString);
-    
+
     // 기본 검증
     if (!title) {
       showInAppNotification(getLocaleMessage('input_need_title', '제목을 입력해주세요.'), 'error');
       return;
     }
-    
+
     if (!text) {
       showInAppNotification(getLocaleMessage('input_need_content', '내용을 입력해주세요.'), 'error');
       return;
     }
-    
+
     // 보안 검증: 원본과 sanitized 버전이 다르면 경고
     if (rawTitle !== title || rawText !== text || rawTagsString !== tagsString) {
       showInAppNotification(getLocaleMessage('input_sanitized_warning', '입력값에서 보안상 위험한 내용이 제거되었습니다.'), 'error');
@@ -485,20 +435,20 @@ document.addEventListener('DOMContentLoaded', () => {
       tagInput.value = tagsString;
       return;
     }
-    
+
     // 태그 파싱 (쉼표로 구분)
     let tags = [];
     if (tagsString) {
       tags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
     }
-    
+
     // 저장된 텍스트 목록 가져오기
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
-      
+
       // 수정 모드인지 확인
       const isEditing = editingId.value !== '';
-      
+
       if (isEditing) {
         // 기존 항목 업데이트
         const index = savedTexts.findIndex(item => item.id === editingId.value);
@@ -538,43 +488,43 @@ document.addEventListener('DOMContentLoaded', () => {
           showInAppNotification(getLocaleMessage('data_invalid', '데이터 형식이 올바르지 않습니다.'), 'error');
           return;
         }
-        
+
         // 새 텍스트 추가
         savedTexts.push(newText);
       }
-      
+
       // 업데이트된 목록 저장
       chrome.storage.local.set({ savedTexts }, () => {
         // 입력 필드 초기화
         resetForm();
-        
+
         // 알림 표시 (기존 alert 대신 사용)
         showInAppNotification(
           isEditing ? getLocaleMessage('text_update_success', '텍스트가 수정되었습니다!') : getLocaleMessage('text_save_success', '텍스트가 저장되었습니다!'),
           'success'
         );
-        
+
         // 성공적으로 저장된 후 임시 데이터 삭제
         localStorage.removeItem(TEMP_STORAGE_KEY);
-        
+
         // 보기 탭으로 전환
         switchTab(viewTabBtn, viewTab);
       });
     });
   }
-  
+
   // 저장 버튼 클릭 이벤트 리스너
   saveBtn.addEventListener('click', saveText);
-  
+
   // 북마크 토글 함수
   function toggleBookmark(textId) {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       const index = savedTexts.findIndex(text => text.id === textId);
-      
+
       if (index !== -1) {
         savedTexts[index].isBookmarked = !savedTexts[index].isBookmarked;
-        
+
         chrome.storage.local.set({ savedTexts }, () => {
           // 목록 다시 로드
           loadTextList(searchInput.value);
@@ -588,16 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
   // 카운터 업데이트 함수
   function updateCounters() {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       const bookmarkedTexts = savedTexts.filter(text => text.isBookmarked);
-      
+
       textCounter.textContent = savedTexts.length;
       bookmarkCounter.textContent = bookmarkedTexts.length;
-      
+
       // 북마크 목록이 비어있을 때 메시지 표시/숨김
       if (bookmarkedTexts.length === 0) {
         emptyBookmarkMessage.style.display = 'block';
@@ -611,13 +561,13 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       textList.textContent = '';
-      
+
       const searchInTitle = searchTitle ? searchTitle.checked : true;
       const searchInContent = searchContent ? searchContent.checked : true;
       const searchInTags = searchTags ? searchTags.checked : true;
-      
+
       let filteredTexts = savedTexts;
-      
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filteredTexts = savedTexts.filter(text => {
@@ -627,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return false;
         });
       }
-      
+
       try {
         if (typeof compareByRecency === 'function') {
           filteredTexts.sort(compareByRecency);
@@ -643,12 +593,12 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {
         console.error('Error sorting texts:', e);
       }
-      
+
       if (filteredTexts.length === 0) {
         const emptyMessage = searchQuery
           ? getLocaleMessage('view_empty_search', `"${searchQuery}" 검색 결과가 없습니다.`, [searchQuery])
           : getLocaleMessage('view_empty_texts', '저장된 텍스트가 없습니다.');
-        
+
         const emptyStateDiv = document.createElement('div');
         emptyStateDiv.className = 'empty-state';
         const emptyIconDiv = document.createElement('div');
@@ -665,38 +615,38 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyStateDiv.appendChild(emptyIconDiv);
         emptyStateDiv.appendChild(h4);
         emptyStateDiv.appendChild(p);
-        
+
         textList.appendChild(emptyStateDiv);
         updateCounters();
         return;
       }
-      
+
       filteredTexts.forEach(text => {
         const textItem = createTextItem(text);
         textList.appendChild(textItem);
       });
-      
+
       updateCounters();
     });
   }
-  
+
   // 북마크 목록 로드 함수
   function loadBookmarkList() {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       const bookmarkedTexts = savedTexts.filter(text => text.isBookmarked);
-      
+
       bookmarkList.textContent = '';
-      
+
       if (bookmarkedTexts.length === 0) {
         emptyBookmarkMessage.style.display = 'block';
         updateCounters();
         return;
       }
-      
+
       emptyBookmarkMessage.style.display = 'none';
       bookmarkedTexts.sort(compareByRecency);
-      
+
       bookmarkedTexts.forEach(text => {
         const textItem = createTextItem(text, true);
         bookmarkList.appendChild(textItem);
@@ -708,13 +658,13 @@ document.addEventListener('DOMContentLoaded', () => {
   window.updateCounters = updateCounters;
   window.loadTextList = loadTextList;
   window.loadBookmarkList = loadBookmarkList;
-  
+
   // 텍스트 수정 함수
   function editText(textId) {
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
       const textToEdit = savedTexts.find(text => text.id === textId);
-      
+
       if (textToEdit) {
         titleInput.value = textToEdit.title || '';
         textInput.value = textToEdit.content || '';
@@ -722,13 +672,13 @@ document.addEventListener('DOMContentLoaded', () => {
         editingId.value = textId;
         const btnText = saveBtn.querySelector('.btn-content span');
         if (btnText) btnText.textContent = getLocaleMessage('button_edit_mode', '수정하기');
-        
+
         updateTagPreview();
         switchTab(saveTabBtn, saveTab);
       }
     });
   }
-  
+
   // 클립보드에 복사 함수
   function copyToClipboard(text, textItem, titleElement = null) {
     navigator.clipboard.writeText(text).then(() => {
@@ -738,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackElement.style.display = 'inline';
         setTimeout(() => { feedbackElement.style.display = 'none'; }, 2000);
       }
-      
+
       // 제목 더블클릭인 경우 제목 하이라이트 효과 추가
       if (titleElement) {
         highlightTitle(titleElement);
@@ -748,14 +698,14 @@ document.addEventListener('DOMContentLoaded', () => {
       showInAppNotification(getLocaleMessage('clipboard_failed', '클립보드 복사에 실패했습니다.'), 'error');
     });
   }
-  
+
   // 제목 하이라이트 효과 함수
   function highlightTitle(titleElement) {
     if (!titleElement) return;
-    
+
     // 하이라이트 클래스 추가
     titleElement.classList.add('title-copied');
-    
+
     // 애니메이션 완료 후 클래스 제거
     setTimeout(() => {
       titleElement.classList.remove('title-copied');
@@ -778,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.body.removeChild(textarea);
   }
-  
+
   // 텍스트 삭제 함수
   function deleteText(textId) {
     chrome.storage.local.get('savedTexts', (result) => {
@@ -805,13 +755,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
-  
+
   // 검색 이벤트 리스너
   searchInput.addEventListener('input', () => loadTextList(searchInput.value));
   searchTitle.addEventListener('change', () => loadTextList(searchInput.value));
   searchContent.addEventListener('change', () => loadTextList(searchInput.value));
   searchTags.addEventListener('change', () => loadTextList(searchInput.value));
-  
+
   // 내보내기 기능
   function exportData() {
     chrome.storage.local.get('savedTexts', (result) => {
@@ -826,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `text-saver-export-${new Date().toISOString().slice(0,16).replace(/[T:]/g,'-')}-${Math.random().toString(36).substring(2,6)}.json`;
+      a.download = `text-saver-export-${new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-')}-${Math.random().toString(36).substring(2, 6)}.json`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -836,7 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 100);
     });
   }
-  
+
   function showImportResult(message, type = 'info') {
     if (importResult) {
       importResult.textContent = message;
@@ -851,12 +801,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!data || typeof data !== 'object' || !Array.isArray(data.savedTexts)) {
       return { valid: false, error: getLocaleMessage('import_invalid_json', '유효하지 않은 JSON 형식입니다.'), data: [], skipped: [] };
     }
-    
+
     // 보안: 최대 항목 수 제한
     if (data.savedTexts.length > 1000) {
       return { valid: false, error: getLocaleMessage('import_security_limit', '보안상 최대 1000개 항목까지만 가져올 수 있습니다.'), data: [], skipped: [] };
     }
-    
+
     const validItems = [];
     const invalidIndexes = [];
     data.savedTexts.forEach((text, idx) => {
@@ -871,8 +821,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 원본과 sanitized 버전이 크게 다르면 제외
-        if (text.title.length - sanitizedTitle.length > 10 || 
-            text.content.length - sanitizedContent.length > 50) {
+        if (text.title.length - sanitizedTitle.length > 10 ||
+          text.content.length - sanitizedContent.length > 50) {
           console.error('보안상 위험한 항목이 필터링되었습니다:', text.title);
           invalidIndexes.push(idx + 1);
           return;
@@ -884,7 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
           title: sanitizedTitle,
           content: sanitizedContent
         };
-        
+
         // 태그 검증 및 sanitization
         if (text.tags && Array.isArray(text.tags)) {
           cleanText.tags = text.tags
@@ -898,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
           invalidIndexes.push(idx + 1);
           return;
         }
-        
+
         validItems.push(cleanText);
       } else {
         invalidIndexes.push(idx + 1);
@@ -1026,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateCounters();
     });
   }
-  
+
   function resetAllData() {
     showInAppNotification(getLocaleMessage('reset_confirm_toast', '정말로 모든 데이터를 초기화하시겠습니까?'), 'error', 10000);
     const userConfirmed = confirm(getLocaleMessage('reset_confirm_dialog', '[주의] 정말로 모든 데이터를 영구적으로 삭제하시겠습니까?'));
@@ -1042,7 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showInAppNotification(getLocaleMessage('reset_cancelled', '데이터 초기화가 취소되었습니다.'), 'info');
     }
   }
-  
+
   exportBtn.addEventListener('click', exportData);
   importBrowseBtn.addEventListener('click', () => importInput.click());
   importInput.addEventListener('change', (e) => {
@@ -1063,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
     restorePresetsBtn.addEventListener('click', restorePresetData);
   }
   resetDataBtn.addEventListener('click', resetAllData);
-  
+
   loadTextList();
   updateCounters();
 
@@ -1080,14 +1030,14 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         return;
       }
-      
+
       if (e.target.closest('.copy-btn')) {
         const textToCopy = textItem.querySelector('.text-content p').textContent;
         copyToClipboard(textToCopy, textItem);
         e.stopPropagation();
         return;
       }
-      
+
       if (e.target.closest('.edit-btn')) {
         editText(textId);
         e.stopPropagation();
@@ -1104,13 +1054,13 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         return;
       }
-      
+
       if (e.target.closest('.confirm-yes-btn')) {
         deleteText(textId);
         e.stopPropagation();
         return;
       }
-      
+
       if (e.target.closest('.confirm-no-btn')) {
         const actionGroup = textItem.querySelector('.action-buttons-group');
         const confirmGroup = textItem.querySelector('.delete-confirm-group');
@@ -1141,14 +1091,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const textItem = document.createElement('div');
     textItem.className = 'text-item';
     textItem.dataset.id = text.id;
-  
+
     // Header
     const headerElement = document.createElement('div');
     headerElement.className = 'text-header';
     const titleElement = document.createElement('h3');
     titleElement.className = 'text-title';
     titleElement.textContent = text.title;
-    
+
     // 제목 더블클릭으로 복사 기능 추가
     titleElement.addEventListener('dblclick', (e) => {
       e.stopPropagation(); // 기존 클릭 이벤트 전파 방지
@@ -1157,16 +1107,16 @@ document.addEventListener('DOMContentLoaded', () => {
         copyToClipboard(textToCopy, textItem, titleElement);
       }
     });
-    
+
     // 제목에 호버 시 힌트 표시
     titleElement.title = getLocaleMessage('copy_hint', '더블클릭하여 복사');
-    
+
     const dateElement = document.createElement('span');
     dateElement.className = 'text-date';
     dateElement.textContent = formatDate(text.createdAt);
     headerElement.appendChild(titleElement);
     headerElement.appendChild(dateElement);
-  
+
     // Content (펼치기/접기 대상)
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'content-wrapper';
@@ -1176,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     contentParagraph.textContent = text.content;
     contentElement.appendChild(contentParagraph);
     contentWrapper.appendChild(contentElement);
-    
+
     // 항상 보이는 정보 (태그, 출처)
     const infoContainer = document.createElement('div');
     infoContainer.className = 'info-container';
@@ -1193,7 +1143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     infoContainer.appendChild(tagsElement);
-  
+
     // Source URL
     if (text.sourceURL) {
       const sourceElement = document.createElement('div');
@@ -1207,15 +1157,15 @@ document.addEventListener('DOMContentLoaded', () => {
       linkIcon.className = 'fas fa-link';
       sourceLink.appendChild(linkIcon);
       sourceLink.appendChild(document.createTextNode(` ${text.metadata?.pageTitle || text.sourceURL}`));
-      
+
       sourceElement.appendChild(sourceLink);
       infoContainer.appendChild(sourceElement);
     }
-  
+
     // Actions
     const actionsElement = document.createElement('div');
     actionsElement.className = 'text-actions';
-  
+
     // Bookmark Button
     const bookmarkBtn = document.createElement('button');
     bookmarkBtn.className = 'item-btn bookmark-btn';
@@ -1223,11 +1173,11 @@ document.addEventListener('DOMContentLoaded', () => {
     bookmarkBtn.textContent = text.isBookmarked ? '★' : '☆';
     bookmarkBtn.setAttribute('aria-label', text.isBookmarked ? getLocaleMessage('bookmark_remove', '북마크 해제') : getLocaleMessage('bookmark_add', '북마크'));
     bookmarkBtn.title = text.isBookmarked ? getLocaleMessage('bookmark_remove', '북마크 해제') : getLocaleMessage('bookmark_add', '북마크');
-  
+
     // Action Buttons Group
     const actionButtonsGroup = document.createElement('div');
     actionButtonsGroup.className = 'action-buttons-group';
-  
+
     // Copy Button
     const copyBtn = document.createElement('button');
     copyBtn.className = 'item-btn copy-btn';
@@ -1235,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     copyBtn.textContent = getLocaleMessage('button_copy_label', '📋 복사');
     copyBtn.setAttribute('aria-label', getLocaleMessage('button_copy_title', '텍스트 복사'));
     copyBtn.title = getLocaleMessage('button_copy_title', '텍스트 복사');
-  
+
     // Edit Button
     const editBtn = document.createElement('button');
     editBtn.className = 'item-btn edit-btn';
@@ -1243,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.textContent = getLocaleMessage('button_edit_label', '✏️ 수정');
     editBtn.setAttribute('aria-label', getLocaleMessage('button_edit_title', '텍스트 수정'));
     editBtn.title = getLocaleMessage('button_edit_title', '텍스트 수정');
-  
+
     // Delete Button (Toggles confirm UI)
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'item-btn delete-btn';
@@ -1251,57 +1201,57 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.textContent = getLocaleMessage('button_delete_label', '🗑️ 삭제');
     deleteBtn.setAttribute('aria-label', getLocaleMessage('button_delete_title', '텍스트 삭제'));
     deleteBtn.title = getLocaleMessage('button_delete_title', '텍스트 삭제');
-  
+
     // Copy Feedback Message
     const copyFeedback = document.createElement('span');
     copyFeedback.className = 'copy-feedback';
     copyFeedback.textContent = getLocaleMessage('copied_feedback', '복사됨!');
     copyFeedback.style.display = 'none';
-  
+
     // Delete Confirmation UI
     const deleteConfirmGroup = document.createElement('div');
     deleteConfirmGroup.className = 'delete-confirm-group';
     deleteConfirmGroup.style.display = 'none';
-  
+
     const confirmText = document.createElement('span');
     confirmText.className = 'delete-confirm-text';
     confirmText.textContent = getLocaleMessage('confirm_delete_prompt', '정말 삭제할까요?');
-  
+
     const confirmYesBtn = document.createElement('button');
     confirmYesBtn.className = 'item-btn confirm-yes-btn';
     confirmYesBtn.textContent = getLocaleMessage('confirm_yes', '예');
-  
+
     const confirmNoBtn = document.createElement('button');
     confirmNoBtn.className = 'item-btn confirm-no-btn';
     confirmNoBtn.textContent = getLocaleMessage('confirm_no', '아니요');
-  
+
     deleteConfirmGroup.appendChild(confirmText);
     deleteConfirmGroup.appendChild(confirmYesBtn);
     deleteConfirmGroup.appendChild(confirmNoBtn);
-  
+
     // Assemble Action Buttons
     actionButtonsGroup.appendChild(copyBtn);
     actionButtonsGroup.appendChild(editBtn);
     actionButtonsGroup.appendChild(deleteBtn);
     actionButtonsGroup.appendChild(copyFeedback);
-  
+
     // Assemble Actions Element
     actionsElement.appendChild(bookmarkBtn);
     actionsElement.appendChild(actionButtonsGroup);
     actionsElement.appendChild(deleteConfirmGroup);
-  
+
     // Assemble Text Item
     textItem.appendChild(headerElement);
     textItem.appendChild(contentWrapper);
     textItem.appendChild(infoContainer);
     textItem.appendChild(actionsElement);
-  
+
     // 호버 시 동적 미리보기 높이 설정
     setupHoverPreview(textItem, contentWrapper);
-  
+
     return textItem;
   }
-  
+
   // 호버 시 내용 미리보기 설정 함수 (딜레이 적용으로 고도화)
   function setupHoverPreview(textItem, contentWrapper) {
     let hoverTimer = null;
@@ -1310,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     textItem.addEventListener('mouseenter', () => {
       // 이미 펼쳐진 상태면 무시
       if (textItem.classList.contains('expanded')) return;
-      
+
       // 300ms 딜레이 후 펼침 (마우스가 스쳐 지나갈 때 번쩍거림 방지)
       hoverTimer = setTimeout(() => {
         // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
@@ -1323,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
           const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
           const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
-          
+
           // 실제 내용이 기본 높이보다 크면 동적으로 설정 (아래로만 펼쳐짐)
           if (scrollHeight > minPreviewHeight) {
             contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
@@ -1331,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }, 300);
     });
-    
+
     // 호버 종료 시 원래대로
     textItem.addEventListener('mouseleave', () => {
       // 딜레이 중 마우스가 나가면 펼침 취소
@@ -1411,7 +1361,7 @@ function updateAutoSaveStatus(status, duration = 2000) {
   if (status === '복원됨') localizedStatus = restoredLabel;
   statusText.textContent = `${prefix} ${localizedStatus}`;
   statusDot.className = `status-dot ${status === '저장됨' ? 'saved' : (status === '복원됨' ? 'restored' : '')}`;
-  
+
   if (duration) {
     setTimeout(() => {
       statusText.textContent = getLocaleMessage('auto_save_ready', '자동 저장 준비됨');
@@ -1423,20 +1373,20 @@ function updateAutoSaveStatus(status, duration = 2000) {
 // Auto-complete toggle 관련 함수들
 function initAutoCompleteToggle() {
   if (!autoCompleteToggle || !featureStatusText) return;
-  
+
   // 초기 상태 로드
   chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
     const enabled = result.autoCompleteEnabled !== false; // 기본값: true
     autoCompleteToggle.checked = enabled;
     updateFeatureStatus(enabled);
   });
-  
+
   // 토글 변경 이벤트 리스너
-  autoCompleteToggle.addEventListener('change', function() {
+  autoCompleteToggle.addEventListener('change', function () {
     const enabled = this.checked;
-    
+
     // 즉시 현재 탭에 메시지 전송 (Message Passing)
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
           action: 'toggleAutoComplete',
@@ -1448,13 +1398,13 @@ function initAutoCompleteToggle() {
         });
       }
     });
-    
+
     // Storage에 저장
-    chrome.storage.sync.set({autoCompleteEnabled: enabled});
-    
+    chrome.storage.sync.set({ autoCompleteEnabled: enabled });
+
     // UI 상태 업데이트
     updateFeatureStatus(enabled);
-    
+
     // 🎯 Background Script에 아이콘 업데이트 메시지 전송 (임시 뱃지 표시 요청)
     chrome.runtime.sendMessage({
       action: 'updateIcon',
@@ -1465,7 +1415,7 @@ function initAutoCompleteToggle() {
         return;
       }
     });
-    
+
     // 시각적 피드백
     showInAppNotification(
       enabled
@@ -1551,29 +1501,29 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           // 클라우드 백업 정보 조회 (타임스탬프 비교)
           const cloudData = await GoogleDrive.getCloudBackupInfo();
-          
+
           if (cloudData && cloudData.backupDate) {
             const cloudDate = new Date(cloudData.backupDate);
             const cloudItemCount = cloudData.savedTexts ? cloudData.savedTexts.length : 0;
             const localItemCount = savedTexts.length;
-            
+
             // 로컬 데이터의 마지막 수정 시간 계산 (가장 최근 수정된 항목 기준)
             const localLastModified = savedTexts.reduce((latest, item) => {
               const itemDate = new Date(item.updatedAt || item.createdAt || 0);
               return itemDate > latest ? itemDate : latest;
             }, new Date(0));
-            
+
             // 클라우드가 더 최신인 경우 경고
             if (cloudDate > localLastModified) {
               const cloudDateStr = cloudDate.toLocaleString('ko-KR');
               const localDateStr = localLastModified.toLocaleString('ko-KR');
-              
-              const confirmMsg = 
+
+              const confirmMsg =
                 `⚠️ 클라우드 백업이 더 최신입니다.\n\n` +
                 `클라우드: ${cloudDateStr} (${cloudItemCount}개)\n` +
                 `로컬: ${localDateStr} (${localItemCount}개)\n\n` +
                 `정말 덮어쓰시겠습니까?`;
-              
+
               if (!confirm(confirmMsg)) {
                 driveBackupBtn.disabled = false;
                 driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
@@ -1585,7 +1535,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // 백업 진행
           driveBackupBtn.textContent = '백업 중...';
-          
+
           const backupData = {
             version: '1.0',
             savedTexts: savedTexts,
