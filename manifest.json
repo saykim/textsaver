@@ -12,7 +12,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup.html?view=popup",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -32,7 +32,7 @@
     "sidePanel"
   ],
   "side_panel": {
-    "default_path": "popup.html"
+    "default_path": "popup.html?view=panel"
   },
   "oauth2": {
     "client_id": "138881851224-6v532ehts4oh3l4j678566rjmnslb339.apps.googleusercontent.com",
@@ -55,9 +55,16 @@
   "author": "BDK-KIMS-9587-TS",
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
-      "js": ["js/utils.js", "js/content.js"],
-      "css": ["css/content.css"],
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "js/utils.js",
+        "js/content.js"
+      ],
+      "css": [
+        "css/content.css"
+      ],
       "all_frames": false,
       "match_about_blank": false,
       "run_at": "document_end"
