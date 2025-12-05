@@ -175,6 +175,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // 확장 프로그램 시작 시 keep-alive 활성화
 setupKeepAlive();
 
+// Side Panel 상태 추적을 위한 변수
+const sidePanelState = {}; // windowId -> boolean
+
 // 키보드 단축키 처리 (Ctrl+Shift+T)
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'toggle-auto-complete') {
@@ -196,14 +199,60 @@ chrome.commands.onCommand.addListener((command) => {
         });
       }
     });
+  } else if (command === 'open-side-panel') {
+    // 사이드 패널 토글 로직
+    if (chrome.sidePanel && chrome.sidePanel.open) {
+      chrome.windows.getCurrent({ populate: false }, (window) => {
+        if (!window || !window.id) return;
+        
+        const windowId = window.id;
+        // 현재 상태가 열려있으면 닫기 (비활성화 후 재활성화 트릭)
+        if (sidePanelState[windowId]) {
+          chrome.sidePanel.setOptions({ enabled: false }, () => {
+            chrome.sidePanel.setOptions({ enabled: true });
+            sidePanelState[windowId] = false; // 상태 업데이트
+          });
+        } else {
+          // 닫혀있으면 열기
+          chrome.sidePanel.open({ windowId: windowId })
+            .catch(error => console.error("Error opening side panel via shortcut:", error));
+        }
+      });
+    }
   }
 });
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== 'text-saver-keepalive') {
+  // Side Panel 연결 추적
+  if (port.name === 'sidepanel-open') {
+    const sender = port.sender;
+    // sender.tab.windowId 또는 sender.windowId 사용 (컨텍스트에 따라 다름)
+    // 일반적으로 사이드 패널은 탭과 연동되거나 윈도우와 연동됨. 
+    // 여기서는 popup.js에서 보낸 windowId를 활용하거나 sender를 통해 추론
+    
+    // 포트 메시지로 windowId를 받는 것이 가장 확실하지만, 
+    // 간단하게 sender 정보를 활용: side panel은 보통 tab이 없을 수도 있지만 windowId는 있어야 함
+    // 하지만 sender.tab?.windowId 가 가장 확실한 방법 (만약 탭 관련 패널이라면)
+    
+    // 여기서는 간단히 sender가 있는 연결된 윈도우를 찾기 위해 메시지 리스너 추가
+    port.onMessage.addListener((msg) => {
+      if (msg.windowId) {
+        sidePanelState[msg.windowId] = true;
+        
+        port.onDisconnect.addListener(() => {
+          sidePanelState[msg.windowId] = false;
+        });
+      }
+    });
+
     return;
   }
 
+  if (port.name !== 'text-saver-keepalive') {
+    return;
+  }
+  
+  // Keep-alive 로직
   port.onDisconnect.addListener(() => {
     // bfcache 오류 무시 처리
     if (chrome.runtime.lastError) {
@@ -215,7 +264,6 @@ chrome.runtime.onConnect.addListener((port) => {
       // 다른 오류는 오류로 기록
       console.error('Text Saver: Port disconnect error:', errorMsg);
     }
-    // No-op: the listener exists to keep the service worker alive while the page is active.
   });
 });
 

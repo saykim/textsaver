@@ -1,6 +1,6 @@
 {
   "name": "Text Saver",
-  "version": "2.6.2",
+  "version": "2.3.6",
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,
@@ -47,6 +47,13 @@
         "mac": "Command+Shift+T"
       },
       "description": "Toggle Text Saver // auto-complete feature"
+    },
+    "open-side-panel": {
+      "suggested_key": {
+        "default": "Alt+L",
+        "mac": "Alt+L"
+      },
+      "description": "Open Text Saver Side Panel"
     }
   },
   "background": {

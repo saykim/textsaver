@@ -292,6 +292,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 🚀 사이드 패널 상태 추적을 위한 연결 (Toggle 기능 지원)
+  if (FORCE_PANEL_MODE || (!FORCE_POPUP_MODE && !window.location.search.includes('view=popup'))) {
+    try {
+      // 현재 창 ID를 background에 전달하기 위해 연결
+      chrome.windows.getCurrent((win) => {
+        if (win && win.id) {
+          const port = chrome.runtime.connect({ name: 'sidepanel-open' });
+          port.postMessage({ windowId: win.id });
+        }
+      });
+    } catch (e) {
+      console.log('Not in extension context or connection failed');
+    }
+  }
+
   // UI 요소 참조
   const saveTabBtn = document.getElementById('saveTabBtn');
   const viewTabBtn = document.getElementById('viewTabBtn');
@@ -495,6 +510,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 업데이트된 목록 저장
       chrome.storage.local.set({ savedTexts }, () => {
+        savedTextsCache = savedTexts;
+        dataChanged = false;
+
         // 입력 필드 초기화
         resetForm();
 
@@ -526,6 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
         savedTexts[index].isBookmarked = !savedTexts[index].isBookmarked;
 
         chrome.storage.local.set({ savedTexts }, () => {
+          savedTextsCache = savedTexts;
+          dataChanged = false;
           // 목록 다시 로드
           loadTextList(searchInput.value);
           // 북마크 탭일 경우 북마크 목록도 업데이트
@@ -556,101 +576,126 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  // 텍스트 목록 로드 함수
-  function loadTextList(searchQuery = '') {
-    chrome.storage.local.get('savedTexts', (result) => {
-      const savedTexts = result.savedTexts || [];
-      textList.textContent = '';
+  // 텍스트 목록 렌더링 함수 (로직 분리)
+  function renderTextList(savedTexts, searchQuery = '') {
+    textList.textContent = '';
 
-      const searchInTitle = searchTitle ? searchTitle.checked : true;
-      const searchInContent = searchContent ? searchContent.checked : true;
-      const searchInTags = searchTags ? searchTags.checked : true;
+    const searchInTitle = searchTitle ? searchTitle.checked : true;
+    const searchInContent = searchContent ? searchContent.checked : true;
+    const searchInTags = searchTags ? searchTags.checked : true;
 
-      let filteredTexts = savedTexts;
+    let filteredTexts = savedTexts;
 
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filteredTexts = savedTexts.filter(text => {
-          if (searchInTitle && text.title && text.title.toLowerCase().includes(query)) return true;
-          if (searchInContent && text.content && text.content.toLowerCase().includes(query)) return true;
-          if (searchInTags && text.tags && text.tags.some(tag => tag.toLowerCase().includes(query))) return true;
-          return false;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredTexts = savedTexts.filter(text => {
+        if (searchInTitle && text.title && text.title.toLowerCase().includes(query)) return true;
+        if (searchInContent && text.content && text.content.toLowerCase().includes(query)) return true;
+        if (searchInTags && text.tags && text.tags.some(tag => tag.toLowerCase().includes(query))) return true;
+        return false;
+      });
+    }
+
+    try {
+      if (typeof compareByRecency === 'function') {
+        filteredTexts.sort(compareByRecency);
+      } else {
+        console.error('compareByRecency function not found');
+        // Fallback sort
+        filteredTexts.sort((a, b) => {
+          const timeA = new Date(a.updatedAt || a.createdAt).getTime() || 0;
+          const timeB = new Date(b.updatedAt || b.createdAt).getTime() || 0;
+          return timeB - timeA;
         });
       }
+    } catch (e) {
+      console.error('Error sorting texts:', e);
+    }
 
-      try {
-        if (typeof compareByRecency === 'function') {
-          filteredTexts.sort(compareByRecency);
-        } else {
-          console.error('compareByRecency function not found');
-          // Fallback sort
-          filteredTexts.sort((a, b) => {
-            const timeA = new Date(a.updatedAt || a.createdAt).getTime() || 0;
-            const timeB = new Date(b.updatedAt || b.createdAt).getTime() || 0;
-            return timeB - timeA;
-          });
-        }
-      } catch (e) {
-        console.error('Error sorting texts:', e);
-      }
+    if (filteredTexts.length === 0) {
+      const emptyMessage = searchQuery
+        ? getLocaleMessage('view_empty_search', `"${searchQuery}" 검색 결과가 없습니다.`, [searchQuery])
+        : getLocaleMessage('view_empty_texts', '저장된 텍스트가 없습니다.');
 
-      if (filteredTexts.length === 0) {
-        const emptyMessage = searchQuery
-          ? getLocaleMessage('view_empty_search', `"${searchQuery}" 검색 결과가 없습니다.`, [searchQuery])
-          : getLocaleMessage('view_empty_texts', '저장된 텍스트가 없습니다.');
+      const emptyStateDiv = document.createElement('div');
+      emptyStateDiv.className = 'empty-state';
+      const emptyIconDiv = document.createElement('div');
+      emptyIconDiv.className = 'empty-icon';
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-file-text';
+      emptyIconDiv.appendChild(icon);
+      const h4 = document.createElement('h4');
+      h4.textContent = emptyMessage;
+      const p = document.createElement('p');
+      p.textContent = searchQuery
+        ? getLocaleMessage('view_try_another', '다른 검색어를 시도해보세요.')
+        : getLocaleMessage('view_save_prompt', '새로운 텍스트를 저장해보세요.');
+      emptyStateDiv.appendChild(emptyIconDiv);
+      emptyStateDiv.appendChild(h4);
+      emptyStateDiv.appendChild(p);
 
-        const emptyStateDiv = document.createElement('div');
-        emptyStateDiv.className = 'empty-state';
-        const emptyIconDiv = document.createElement('div');
-        emptyIconDiv.className = 'empty-icon';
-        const icon = document.createElement('i');
-        icon.className = 'fas fa-file-text';
-        emptyIconDiv.appendChild(icon);
-        const h4 = document.createElement('h4');
-        h4.textContent = emptyMessage;
-        const p = document.createElement('p');
-        p.textContent = searchQuery
-          ? getLocaleMessage('view_try_another', '다른 검색어를 시도해보세요.')
-          : getLocaleMessage('view_save_prompt', '새로운 텍스트를 저장해보세요.');
-        emptyStateDiv.appendChild(emptyIconDiv);
-        emptyStateDiv.appendChild(h4);
-        emptyStateDiv.appendChild(p);
-
-        textList.appendChild(emptyStateDiv);
-        updateCounters();
-        return;
-      }
-
-      filteredTexts.forEach(text => {
-        const textItem = createTextItem(text);
-        textList.appendChild(textItem);
-      });
-
+      textList.appendChild(emptyStateDiv);
       updateCounters();
+      return;
+    }
+
+    filteredTexts.forEach(text => {
+      const textItem = createTextItem(text);
+      textList.appendChild(textItem);
+    });
+
+    updateCounters();
+  }
+
+  // 텍스트 목록 로드 함수 (캐싱 적용)
+  function loadTextList(searchQuery = '') {
+    // 캐시된 데이터가 있고 변경되지 않았으면 캐시 사용
+    if (savedTextsCache && !dataChanged) {
+      renderTextList(savedTextsCache, searchQuery);
+      return;
+    }
+
+    chrome.storage.local.get('savedTexts', (result) => {
+      const savedTexts = result.savedTexts || [];
+      savedTextsCache = savedTexts;
+      dataChanged = false;
+      renderTextList(savedTexts, searchQuery);
     });
   }
 
-  // 북마크 목록 로드 함수
+  // 북마크 목록 렌더링 함수
+  function renderBookmarkList(savedTexts) {
+    const bookmarkedTexts = savedTexts.filter(text => text.isBookmarked);
+
+    bookmarkList.textContent = '';
+
+    if (bookmarkedTexts.length === 0) {
+      emptyBookmarkMessage.style.display = 'block';
+      updateCounters();
+      return;
+    }
+
+    emptyBookmarkMessage.style.display = 'none';
+    bookmarkedTexts.sort(compareByRecency);
+
+    bookmarkedTexts.forEach(text => {
+      const textItem = createTextItem(text, true);
+      bookmarkList.appendChild(textItem);
+    });
+  }
+
+  // 북마크 목록 로드 함수 (캐싱 적용)
   function loadBookmarkList() {
+    if (savedTextsCache && !dataChanged) {
+      renderBookmarkList(savedTextsCache);
+      return;
+    }
+
     chrome.storage.local.get('savedTexts', (result) => {
       const savedTexts = result.savedTexts || [];
-      const bookmarkedTexts = savedTexts.filter(text => text.isBookmarked);
-
-      bookmarkList.textContent = '';
-
-      if (bookmarkedTexts.length === 0) {
-        emptyBookmarkMessage.style.display = 'block';
-        updateCounters();
-        return;
-      }
-
-      emptyBookmarkMessage.style.display = 'none';
-      bookmarkedTexts.sort(compareByRecency);
-
-      bookmarkedTexts.forEach(text => {
-        const textItem = createTextItem(text, true);
-        bookmarkList.appendChild(textItem);
-      });
+      savedTextsCache = savedTexts;
+      dataChanged = false;
+      renderBookmarkList(savedTexts);
     });
   }
 
@@ -740,6 +785,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const updatedTexts = savedTexts.filter(text => text.id !== textId);
       chrome.storage.local.set({ savedTexts: updatedTexts }, () => {
+        savedTextsCache = updatedTexts;
+        dataChanged = false;
         const displayTitle = textToDelete.title || getLocaleMessage('untitled_text', '제목 없음');
         showInAppNotification(
           getLocaleMessage('delete_success', `"${displayTitle}" 텍스트가 삭제되었습니다.`, [displayTitle]),
@@ -757,7 +804,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 검색 이벤트 리스너
-  searchInput.addEventListener('input', () => loadTextList(searchInput.value));
+  // 검색 이벤트 리스너 (Debounce 적용)
+  searchInput.addEventListener('input', () => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      loadTextList(searchInput.value);
+    }, SEARCH_DEBOUNCE_DELAY);
+  });
   searchTitle.addEventListener('change', () => loadTextList(searchInput.value));
   searchContent.addEventListener('change', () => loadTextList(searchInput.value));
   searchTags.addEventListener('change', () => loadTextList(searchInput.value));
@@ -917,6 +970,8 @@ document.addEventListener('DOMContentLoaded', () => {
               const existingTexts = result.savedTexts || [];
               const mergedTexts = [...existingTexts, ...texts];
               chrome.storage.local.set({ savedTexts: mergedTexts }, () => {
+                savedTextsCache = mergedTexts;
+                dataChanged = false;
                 showImportResult(getLocaleMessage('import_add_success', `${texts.length}개의 텍스트를 추가했습니다.`, [texts.length]), 'success');
                 loadTextList();
                 if (bookmarkTab.classList.contains('active')) loadBookmarkList();
@@ -925,6 +980,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           } else {
             chrome.storage.local.set({ savedTexts: texts }, () => {
+              savedTextsCache = texts;
+              dataChanged = false;
               showImportResult(getLocaleMessage('import_replace_success', `${texts.length}개의 텍스트로 대체했습니다.`, [texts.length]), 'success');
               loadTextList();
               if (bookmarkTab.classList.contains('active')) loadBookmarkList();
@@ -982,6 +1039,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userConfirmed = confirm(getLocaleMessage('reset_confirm_dialog', '[주의] 정말로 모든 데이터를 영구적으로 삭제하시겠습니까?'));
     if (userConfirmed) {
       chrome.storage.local.set({ savedTexts: [] }, () => {
+        savedTextsCache = [];
+        dataChanged = false;
         showInAppNotification(getLocaleMessage('reset_done', '모든 데이터가 초기화되었습니다.'), 'success');
         resetForm();
         loadTextList();
@@ -1597,6 +1656,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (areaName === 'local' && changes.savedTexts) {
         console.log('Storage changed, updating UI...');
+        
+        // 캐시 업데이트 (변경된 데이터가 있으면)
+        if (changes.savedTexts.newValue) {
+          savedTextsCache = changes.savedTexts.newValue;
+          dataChanged = false;
+        }
+        
         // 현재 검색어 상태 유지
         const searchInputEl = document.getElementById('searchInput');
         const currentSearch = searchInputEl ? searchInputEl.value : '';
