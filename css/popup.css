@@ -16,33 +16,33 @@
   --primary-dark: #1d4ed8;
   --primary-light: #eff6ff;
   --primary-lighter: #f8fafc;
-  
+
   /* Secondary Colors - Muted Professional */
   --secondary-color: #dc2626;
   --accent-color: #059669;
   --warning-color: #d97706;
   --info-color: #0891b2;
-  
+
   /* Neutral Gray Scale - Professional */
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-tertiary: #64748b;
   --text-muted: #94a3b8;
   --text-subtle: #cbd5e1;
-  
+
   /* Background Colors - Clean Professional */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
   --bg-card: #ffffff;
   --bg-surface: #fcfcfd;
-  
+
   /* Borders - Ultra Flat */
   --border-color: #e2e8f0;
   --border-color-hover: #cbd5e1;
   --border-color-focus: #2563eb;
   --border-subtle: #f1f5f9;
-  
+
   /* Border Radius - Flat Design */
   --radius-none: 0px;
   --radius-xs: 1px;
@@ -50,11 +50,11 @@
   --radius-md: 3px;
   --radius-lg: 4px;
   --radius-xl: 6px;
-  
+
   /* Transitions - Minimal */
   --transition-fast: all 0.1s ease;
   --transition-normal: all 0.15s ease;
-  
+
   /* Spacing - 최적화된 공간 */
   --space-1: 0.125rem;
   --space-2: 0.25rem;
@@ -75,7 +75,8 @@
 
 html {
   width: 100%;
-  height: 100vh; /* 100% -> 100vh로 변경하여 뷰포트 높이 보장 */
+  height: 100vh;
+  /* 100% -> 100vh로 변경하여 뷰포트 높이 보장 */
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -109,10 +110,14 @@ body.popup-mode {
 
 /* 사이드 패널 모드 (popup-mode 클래스가 없을 때) */
 body:not(.popup-mode) {
-  width: 100% !important; /* 🎯 사이드패널 너비에 맞춤 */
-  min-width: 320px; /* 최소 너비 보장 */
-  max-width: 100%; /* 최대 너비 제한 없음 */
-  overflow-y: auto !important; /* 전체 세로 스크롤 허용 */
+  width: 100% !important;
+  /* 🎯 사이드패널 너비에 맞춤 */
+  min-width: 320px;
+  /* 최소 너비 보장 */
+  max-width: 100%;
+  /* 최대 너비 제한 없음 */
+  overflow-y: auto !important;
+  /* 전체 세로 스크롤 허용 */
   height: auto !important;
   min-height: 100vh;
 }
@@ -123,7 +128,8 @@ body:not(.popup-mode) {
   background: var(--bg-card);
   border: none;
   border-radius: 0;
-  overflow: hidden !important; /* 기본값 (팝업용) */
+  overflow: hidden !important;
+  /* 기본값 (팝업용) */
   position: relative;
   display: grid;
   grid-template-rows: auto auto 1fr;
@@ -146,12 +152,15 @@ body.popup-mode .container {
 
 /* 사이드 패널 모드 컨테이너 설정 */
 body:not(.popup-mode) .container {
-  width: 100% !important; /* 🎯 사이드패널 너비 100% */
-  min-width: 320px; /* 최소 너비 */
-  max-width: 100%; /* 제한 없음 */
+  width: 100% !important;
+  min-width: 320px;
+  max-width: 100%;
   height: auto !important;
+  min-height: 100vh;
   overflow: visible !important;
-  display: block; /* Grid 대신 Block으로 자연스럽게 흐르도록 */
+  display: flex;
+  flex-direction: column;
+  /* Grid 대신 Flex로 변경하여 높이 관리 */
 }
 
 /* === 🎯 Header 영역 - Ultra Flat Professional === */
@@ -180,8 +189,10 @@ body:not(.popup-mode) .container {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-none);
-  filter: grayscale(0%); /* Full color */
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy transition */
+  filter: grayscale(0%);
+  /* Full color */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Bouncy transition */
 }
 
 .app-logo:hover {
@@ -213,11 +224,9 @@ body:not(.popup-mode) .container {
 }
 
 .version-badge {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-dark) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-color) 0%,
+      var(--primary-dark) 100%);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -286,6 +295,8 @@ body:not(.popup-mode) .container {
   justify-content: space-between;
   align-items: center;
   gap: var(--space-2);
+  flex-wrap: nowrap;
+  /* 🚀 1단 유지: 줄바꿈 금지 */
   margin-bottom: 0;
   background: transparent;
   border-radius: 0;
@@ -293,12 +304,59 @@ body:not(.popup-mode) .container {
   border: none;
 }
 
+/* 🚀 사이드 패널: 항상 1단 유지, 폭에 따라 라벨 숨김 */
+body:not(.popup-mode) .tab-buttons {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+}
+
+body:not(.popup-mode) .tab-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 축소 허용 */
+  padding: 0.5em 0.6em;
+}
+
+/* 360px 이상: 아이콘 + 라벨 표시 */
+body:not(.popup-mode) .tab-btn .tab-label {
+  font-size: 0.7rem;
+  display: inline;
+}
+
+/* 360px 미만: 아이콘만 표시, 라벨 숨김 */
+@media (max-width: 360px) {
+  body:not(.popup-mode) .tab-btn {
+    padding: 0.5em;
+    gap: 0;
+  }
+
+  body:not(.popup-mode) .tab-btn .tab-label {
+    display: none;
+  }
+
+  body:not(.popup-mode) .tab-btn .tab-icon {
+    font-size: 1.2rem;
+  }
+
+  body:not(.popup-mode) .tab-btn .counter {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    min-width: 14px;
+    height: 14px;
+  }
+}
+
 .tab-btn {
   position: relative;
   background: var(--bg-tertiary);
   border: none;
-  padding: 0.6em 0.8em; /* Reduced padding to fit 4 buttons */
-  border-radius: 12px; /* Rounded rectangle shape */
+  padding: 0.6em 0.8em;
+  /* Reduced padding to fit 4 buttons */
+  border-radius: 12px;
+  /* Rounded rectangle shape */
   cursor: pointer;
   transition: var(--transition-normal);
   display: flex;
@@ -315,23 +373,22 @@ body:not(.popup-mode) .container {
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow for inactive */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Subtle shadow for inactive */
 }
 
 .tab-btn:hover {
   background: var(--bg-card);
   color: var(--text-secondary);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
 
 .tab-btn.active {
   /* Blue Gradient for extension theme */
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-dark) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-color) 0%,
+      var(--primary-dark) 100%);
   color: #ffffff;
   font-weight: 700;
   /* Blue Shadow */
@@ -412,11 +469,12 @@ body:not(.popup-mode) .container {
 .tab-btn.active .counter {
   background: white;
   color: var(--primary-color);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .tab-indicator {
-  display: none; /* Flat 디자인에서는 인디케이터 제거 */
+  display: none;
+  /* Flat 디자인에서는 인디케이터 제거 */
 }
 
 .tab-btn.active .tab-indicator {
@@ -428,14 +486,17 @@ body:not(.popup-mode) .container {
   grid-area: content;
   display: none;
   animation: slideIn 0.3s ease-out;
-  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
-  overflow: hidden; /* !important 제거하여 사이드 패널에서 해제 가능하게 함 */
+  padding: var(--space-1) var(--space-6) 0;
+  /* 🎯 Aligned with header padding */
+  overflow: hidden;
+  /* !important 제거하여 사이드 패널에서 해제 가능하게 함 */
   height: 100%;
   box-sizing: border-box;
   /* max-height 제거 또는 100%로 변경하여 사이드 패널 대응 */
   max-height: 100%;
   min-height: 0;
-  background: transparent; /* 🎯 배경 제거하여 완전 통합 */
+  background: transparent;
+  /* 🎯 배경 제거하여 완전 통합 */
 }
 
 .tab-content.active {
@@ -460,28 +521,36 @@ body:not(.popup-mode) .tab-content {
 #bookmarkTab.tab-content.active {
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* !important 제거 */
-  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
+  overflow: hidden;
+  /* !important 제거 */
+  padding: var(--space-1) var(--space-6) 0;
+  /* 🎯 Aligned with header padding */
   height: 100% !important;
   max-height: 100% !important;
   min-height: 0;
 }
 
-/* 사이드 패널에서는 Block으로 변경하여 전체 스크롤 사용 */
+/* 사이드 패널에서는 Flex 유지하여 높이 채움 */
 body:not(.popup-mode) #viewTab.tab-content.active,
 body:not(.popup-mode) #bookmarkTab.tab-content.active {
-  display: block !important;
+  display: flex !important;
+  flex-direction: column;
   height: auto !important;
+  min-height: 0;
   max-height: none !important;
   overflow: visible !important;
+  flex: 1 1 auto;
+  padding-bottom: var(--space-6);
 }
 
 /* 🎯 저장 탭과 설정 탭 전용 스타일 */
 #saveTab.tab-content.active,
 #settingsTab.tab-content.active {
   display: block;
-  overflow-y: auto !important; /* 팝업에서는 내부 스크롤 */
-  padding: var(--space-1) var(--space-6) 0; /* 🎯 Aligned with header padding */
+  overflow-y: auto !important;
+  /* 팝업에서는 내부 스크롤 */
+  padding: var(--space-1) var(--space-6) 0;
+  /* 🎯 Aligned with header padding */
   height: 100% !important;
   max-height: 100% !important;
 }
@@ -512,6 +581,7 @@ body.popup-mode #settingsTab.tab-content.active {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -568,7 +638,7 @@ body.popup-mode #settingsTab.tab-content.active {
   background: var(--bg-primary);
 }
 
-.checkbox-wrapper input[type="checkbox"]:checked + .checkmark {
+.checkbox-wrapper input[type="checkbox"]:checked+.checkmark {
   background: var(--primary-color);
   border-color: var(--primary-color);
 }
@@ -583,7 +653,7 @@ body.popup-mode #settingsTab.tab-content.active {
   justify-content: center;
 }
 
-.checkbox-wrapper input[type="checkbox"]:checked + .checkmark {
+.checkbox-wrapper input[type="checkbox"]:checked+.checkmark {
   color: white;
 }
 
@@ -600,20 +670,28 @@ body.popup-mode #settingsTab.tab-content.active {
 
 /* === 📋 List Styles - 완전 통합 스크롤 영역 === */
 .text-list {
-  flex: 1; /* 🎯 남은 공간 모두 차지 */
-  min-height: 0; /* 🎯 flex item 스크롤의 핵심 */
-  overflow-y: auto; /* 🎯 텍스트 영역만 스크롤 (팝업용) */
+  flex: 1;
+  /* 🎯 남은 공간 모두 차지 */
+  min-height: 0;
+  /* 🎯 flex item 스크롤의 핵심 */
+  overflow-y: auto;
+  /* 🎯 텍스트 영역만 스크롤 (팝업용) */
   overflow-x: hidden;
   padding-right: var(--space-1);
-  padding-bottom: var(--space-4); /* 🎯 하단 여백 추가하여 마지막 아이템 공간 확보 */
-  height: 100%; /* 부모의 남은 공간 모두 사용 */
+  padding-bottom: var(--space-4);
+  /* 🎯 하단 여백 추가하여 마지막 아이템 공간 확보 */
+  height: 100%;
+  /* 부모의 남은 공간 모두 사용 */
 }
 
-/* 사이드 패널에서는 전체 스크롤 사용 */
+/* 사이드 패널에서는 Flex 유지하여 스크롤 가능하게 */
 body:not(.popup-mode) .text-list {
-  overflow: visible !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   height: auto !important;
-  flex: none; /* Flex 해제 */
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: var(--space-2);
 }
 
 /* 텍스트 리스트 전용 스크롤바 디자인 */
@@ -643,10 +721,13 @@ body:not(.popup-mode) .text-list {
 
 .text-item {
   background: var(--bg-card);
-  border: 1px solid transparent; /* Prepare for border transition */
-  border-radius: 12px; /* Rounded rectangle */
+  border: 1px solid transparent;
+  /* Prepare for border transition */
+  border-radius: 12px;
+  /* Rounded rectangle */
   padding: var(--space-5);
-  margin-bottom: var(--space-4); /* Increased vertical spacing */
+  margin-bottom: var(--space-4);
+  /* Increased vertical spacing */
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
@@ -656,9 +737,12 @@ body:not(.popup-mode) .text-list {
 
 .text-item:hover {
   background: var(--bg-surface);
-  border-color: rgba(37, 99, 235, 0.3); /* Subtle blue border on hover */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 그림자만 부드럽게 적용 */
-  transform: none; /* 제목 위치 고정을 위해 이동 효과 제거 */
+  border-color: rgba(37, 99, 235, 0.3);
+  /* Subtle blue border on hover */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* 그림자만 부드럽게 적용 */
+  transform: none;
+  /* 제목 위치 고정을 위해 이동 효과 제거 */
 }
 
 .text-title {
@@ -670,7 +754,8 @@ body:not(.popup-mode) .text-list {
   line-height: 1.3;
   cursor: pointer;
   transition: color 0.2s ease;
-  user-select: none; /* 더블클릭 시 텍스트 선택 방지 */
+  user-select: none;
+  /* 더블클릭 시 텍스트 선택 방지 */
 }
 
 .text-title:hover {
@@ -690,6 +775,7 @@ body:not(.popup-mode) .text-list {
     border-radius: var(--radius-sm);
     transform: scale(1);
   }
+
   50% {
     background-color: var(--primary-color);
     color: white;
@@ -697,6 +783,7 @@ body:not(.popup-mode) .text-list {
     border-radius: var(--radius-sm);
     transform: scale(1.05);
   }
+
   100% {
     background-color: transparent;
     color: var(--text-primary);
@@ -707,11 +794,13 @@ body:not(.popup-mode) .text-list {
 }
 
 .content-wrapper {
-  max-height: 4.5em; /* 약 3줄의 높이로 초기 상태 제한 */
+  max-height: 4.5em;
+  /* 약 3줄의 높이로 초기 상태 제한 */
   overflow: hidden;
   transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  position: relative; /* ::after 가상 요소를 위함 */
+  position: relative;
+  /* ::after 가상 요소를 위함 */
   background-color: var(--bg-surface);
   padding: var(--space-4);
   border-radius: var(--radius-sm);
@@ -720,7 +809,8 @@ body:not(.popup-mode) .text-list {
 
 /* 펼쳐졌을 때의 스타일은 JS에서 직접 max-height를 설정하여 처리 */
 .text-item.expanded .content-wrapper {
-  max-height: 1000px; /* JS 비활성화 대비, 충분히 큰 값 */
+  max-height: 1000px;
+  /* JS 비활성화 대비, 충분히 큰 값 */
   transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: default;
 }
@@ -732,9 +822,12 @@ body:not(.popup-mode) .text-list {
   position: relative;
   padding: var(--space-3) 0;
   font-weight: 400;
-  overflow-wrap: anywhere; /* 🎯 Force wrapping for long strings */
-  word-break: break-word;  /* Fallback */
-  white-space: pre-wrap;   /* Preserve whitespace but wrap lines */
+  overflow-wrap: anywhere;
+  /* 🎯 Force wrapping for long strings */
+  word-break: break-word;
+  /* Fallback */
+  white-space: pre-wrap;
+  /* Preserve whitespace but wrap lines */
 }
 
 /* 내용이 잘렸을 때 흐릿하게 처리하는 가상 요소 */
@@ -793,6 +886,7 @@ body:not(.popup-mode) .text-list {
     opacity: 0;
     transform: scale(0.8);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -920,10 +1014,12 @@ body:not(.popup-mode) .text-list {
 
 .bookmark-btn {
   padding: var(--space-2);
-  border-radius: 50%; /* Circular touch target */
+  border-radius: 50%;
+  /* Circular touch target */
   color: var(--text-tertiary);
   transition: var(--transition-fast);
-  font-size: 1.3rem; /* Larger icon */
+  font-size: 1.3rem;
+  /* Larger icon */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -934,12 +1030,14 @@ body:not(.popup-mode) .text-list {
 /* 북마크된 상태 - 밝은 금색/오렌지 */
 .bookmark-btn.bookmarked {
   color: #f59e0b;
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); /* Glow effect */
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  /* Glow effect */
 }
 
 .bookmark-btn:hover {
   color: #fbbf24;
-  background-color: rgba(245, 158, 11, 0.1); /* Subtle background on hover */
+  background-color: rgba(245, 158, 11, 0.1);
+  /* Subtle background on hover */
   transform: scale(1.1);
 }
 
@@ -957,8 +1055,15 @@ body:not(.popup-mode) .text-list {
 }
 
 @keyframes fadeInFeedback {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .delete-confirm-group {
@@ -974,7 +1079,8 @@ body:not(.popup-mode) .text-list {
   color: #ef4444;
 }
 
-.confirm-yes-btn, .confirm-no-btn {
+.confirm-yes-btn,
+.confirm-no-btn {
   font-size: 0.7rem !important;
   padding: 2px 6px !important;
   border-radius: var(--radius-sm) !important;
@@ -998,7 +1104,7 @@ body:not(.popup-mode) .text-list {
 }
 
 .confirm-no-btn:hover {
-   background-color: rgba(107, 114, 128, 0.2) !important;
+  background-color: rgba(107, 114, 128, 0.2) !important;
 }
 
 /* === 🎯 Form Styles - Ultra Flat Professional === */
@@ -1008,7 +1114,8 @@ body:not(.popup-mode) .text-list {
   border-radius: var(--radius-sm);
   padding: var(--space-6);
   margin-bottom: 0;
-  max-height: 100%; /* 사이드 패널에서는 유연하게 */
+  max-height: 100%;
+  /* 사이드 패널에서는 유연하게 */
   overflow-y: auto;
   box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -1027,7 +1134,8 @@ body:not(.popup-mode) .form-card {
 }
 
 .form-group {
-  margin-bottom: var(--space-8); /* Increased spacing for breathing room */
+  margin-bottom: var(--space-8);
+  /* Increased spacing for breathing room */
 }
 
 .floating-input {
@@ -1063,7 +1171,8 @@ body:not(.popup-mode) .form-card {
   transition: var(--transition-normal);
   position: relative;
   z-index: 2;
-  border-radius: 12px; /* Rounded rectangle */
+  border-radius: 12px;
+  /* Rounded rectangle */
   font-weight: 500;
 }
 
@@ -1073,7 +1182,7 @@ body:not(.popup-mode) .form-card {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.modern-input:focus ~ .input-icon {
+.modern-input:focus~.input-icon {
   color: var(--primary-color);
 }
 
@@ -1082,7 +1191,7 @@ body:not(.popup-mode) .form-card {
   display: none;
 }
 
-.modern-input:focus + .floating-input {
+.modern-input:focus+.floating-input {
   position: relative;
   width: 100%;
 }
@@ -1100,10 +1209,12 @@ body:not(.popup-mode) .form-card {
 }
 
 textarea.modern-input {
-  min-height: 220px; /* Increased height to fill space */
+  min-height: 220px;
+  /* Increased height to fill space */
   resize: none;
   line-height: 1.6;
-  padding-top: var(--space-5); /* Increased padding */
+  padding-top: var(--space-5);
+  /* Increased padding */
 }
 
 /* Textarea 특별 처리 */
@@ -1126,8 +1237,10 @@ textarea.modern-input {
 .preview-tag {
   background: var(--primary-light);
   color: var(--primary-color);
-  padding: 4px 10px; /* Increased padding */
-  border-radius: 20px; /* Pill shape */
+  padding: 4px 10px;
+  /* Increased padding */
+  border-radius: 20px;
+  /* Pill shape */
   font-size: 0.75rem;
   font-weight: 600;
   border: 1px solid var(--border-color-focus);
@@ -1159,14 +1272,13 @@ textarea.modern-input {
 /* === 🔘 Button Styles - Ultra Flat Professional === */
 .primary-btn {
   /* Blue Gradient for extension theme */
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-dark) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--primary-color) 0%,
+      var(--primary-dark) 100%);
   color: white;
   border: none;
-  border-radius: 12px; /* Rounded rectangle */
+  border-radius: 12px;
+  /* Rounded rectangle */
   padding: var(--space-4) var(--space-6);
   font-size: 0.9rem;
   font-weight: 700;
@@ -1203,7 +1315,8 @@ textarea.modern-input {
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 10px; /* Rounded */
+  border-radius: 10px;
+  /* Rounded */
   padding: var(--space-3) var(--space-4);
   font-size: 0.8rem;
   font-weight: 600;
@@ -1214,7 +1327,7 @@ textarea.modern-input {
   gap: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .secondary-btn:hover {
@@ -1222,14 +1335,16 @@ textarea.modern-input {
   border-color: var(--border-color-hover);
   color: var(--text-primary);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .danger-btn {
-  background: rgba(220, 38, 38, 0.1); /* Soft red background */
+  background: rgba(220, 38, 38, 0.1);
+  /* Soft red background */
   color: #dc2626;
   border: 1px solid rgba(220, 38, 38, 0.2);
-  border-radius: 10px; /* Rounded */
+  border-radius: 10px;
+  /* Rounded */
   padding: var(--space-3) var(--space-4);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1253,8 +1368,10 @@ textarea.modern-input {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-2); /* Reduced from space-4 */
-  padding: var(--space-2) 0; /* Reduced from space-3 */
+  margin-bottom: var(--space-2);
+  /* Reduced from space-4 */
+  padding: var(--space-2) 0;
+  /* Reduced from space-3 */
   flex-shrink: 0;
 }
 
@@ -1268,7 +1385,8 @@ textarea.modern-input {
 .header-icon {
   width: 28px;
   height: 28px;
-  border-radius: 10px; /* Rounded */
+  border-radius: 10px;
+  /* Rounded */
   background: var(--primary-color);
   display: flex;
   align-items: center;
@@ -1323,15 +1441,19 @@ textarea.modern-input {
 
 /* === ⚙️ Settings Styles === */
 .settings-section {
-  margin-bottom: 0; /* 🎯 하단 마진 제거하여 통합 디자인 */
+  margin-bottom: 0;
+  /* 🎯 하단 마진 제거하여 통합 디자인 */
 }
 
 .settings-card {
   background: var(--bg-card);
   border: 1px solid transparent;
-  border-radius: 12px; /* Rounded */
-  padding: var(--space-4); /* Reduced from space-5 */
-  margin-bottom: var(--space-3); /* Reduced from space-4 */
+  border-radius: 12px;
+  /* Rounded */
+  padding: var(--space-4);
+  /* Reduced from space-5 */
+  margin-bottom: var(--space-3);
+  /* Reduced from space-4 */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: var(--transition-normal);
 }
@@ -1349,7 +1471,8 @@ textarea.modern-input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-2) 0; /* Reduced from space-3 */
+  padding: var(--space-2) 0;
+  /* Reduced from space-3 */
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -1421,7 +1544,8 @@ textarea.modern-input {
   margin: 0 auto var(--space-4);
   font-size: 1.8rem;
   color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15); /* Soft glow */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  /* Soft glow */
   transition: transform 0.3s ease;
 }
 
@@ -1449,6 +1573,7 @@ textarea.modern-input {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1457,7 +1582,8 @@ textarea.modern-input {
 
 /* === 🦶 Footer - 숨김 처리 === */
 .footer {
-  display: none; /* 🎯 Footer 완전 제거 */
+  display: none;
+  /* 🎯 Footer 완전 제거 */
 }
 
 .footer-content {
@@ -1467,11 +1593,13 @@ textarea.modern-input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.65rem; /* 크기 축소 */
+  font-size: 0.65rem;
+  /* 크기 축소 */
   width: 100%;
 }
 
-.copyright, .version {
+.copyright,
+.version {
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1 !important;
@@ -1492,12 +1620,14 @@ textarea.modern-input {
 }
 
 .version {
-  padding: 2px 6px !important; /* 크기 축소 */
+  padding: 2px 6px !important;
+  /* 크기 축소 */
   background: var(--primary-gradient);
   color: white;
   border-radius: var(--radius-full);
   font-weight: 700;
-  font-size: 0.6rem; /* 크기 축소 */
+  font-size: 0.6rem;
+  /* 크기 축소 */
   letter-spacing: 0.5px;
   text-transform: uppercase;
   box-shadow: var(--shadow-sm);
@@ -1508,42 +1638,44 @@ textarea.modern-input {
   :root {
     --text-primary: #f7fafc;
     --text-secondary: #e2e8f0;
-    --text-tertiary: #cbd5e0; /* Brightened from #a0aec0 */
-    --text-muted: #a0aec0;    /* Brightened from #718096 */
+    --text-tertiary: #cbd5e0;
+    /* Brightened from #a0aec0 */
+    --text-muted: #a0aec0;
+    /* Brightened from #718096 */
     --bg-primary: #1a202c;
     --bg-secondary: #2d3748;
     --bg-tertiary: #4a5568;
     --bg-card: rgba(45, 55, 72, 0.8);
     --glass-border: rgba(255, 255, 255, 0.1);
   }
-  
+
   /* Ensure setting descriptions are readable */
   .setting-info p {
     color: var(--text-tertiary) !important;
   }
-  
+
   /* 설정 탭 제목(h4) 밝게 */
   .setting-info h4 {
     color: #f7fafc !important;
   }
-  
+
   /* 섹션 헤더 텍스트 밝게 */
   .header-content h3,
   .header-inline .header-title {
     color: #f7fafc !important;
   }
-  
+
   .header-content p,
   .header-inline .header-description {
     color: #cbd5e0 !important;
   }
-  
+
   body {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
   }
 
   /* 🎨 라이트모드와 동일한 선 제거 디자인 적용 */
-  
+
   /* 헤더 구분선을 더 미묘하게 */
   .app-header {
     border-bottom-color: rgba(255, 255, 255, 0.08);
@@ -1610,209 +1742,211 @@ textarea.modern-input {
   .content-wrapper::after {
     background: linear-gradient(to top, var(--bg-card), transparent);
   }
-  
+
   /* 설정 카드 배경 및 텍스트 */
   .settings-card {
     background: rgba(45, 55, 72, 0.9);
   }
-  
+
   .settings-card.danger {
     background: rgba(239, 68, 68, 0.08);
   }
-  
+
   /* === 🎨 다크 모드 디테일 개선 === */
-  
+
   /* 탭 버튼 호버/활성 상태 개선 */
   .tab-btn {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-tertiary);
   }
-  
+
   .tab-btn:hover {
     background: rgba(255, 255, 255, 0.15);
     color: var(--text-primary);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
-  
+
   .tab-btn.active {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
   }
-  
+
   .tab-btn.active:hover {
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
   }
-  
+
   /* 태그 스타일 개선 */
   .tag {
     background: rgba(59, 130, 246, 0.2);
     color: #93c5fd;
     border-color: rgba(59, 130, 246, 0.3);
   }
-  
+
   .preview-tag {
     background: rgba(59, 130, 246, 0.25);
     color: #93c5fd;
     border-color: rgba(59, 130, 246, 0.4);
   }
-  
+
   .preview-tag:hover {
     background: rgba(59, 130, 246, 0.4);
     color: #bfdbfe;
   }
-  
+
   /* 빈 상태 아이콘 개선 */
   .empty-icon {
     background: rgba(59, 130, 246, 0.15);
     color: #60a5fa;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   }
-  
+
   /* 알림 스타일 */
   .notification-content {
     background: rgba(30, 41, 59, 0.95);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   }
-  
+
   /* 스크롤바 다크 모드 */
   .text-list:hover::-webkit-scrollbar-thumb {
     background: rgba(100, 116, 139, 0.5);
   }
-  
+
   .text-list::-webkit-scrollbar-thumb:hover {
     background: rgba(100, 116, 139, 0.7);
   }
-  
+
   /* 버전 뱃지 그림자 개선 */
   .version-badge {
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
   }
-  
+
   /* Placeholder 가독성 개선 */
   .modern-input::placeholder {
     color: rgba(148, 163, 184, 0.7);
   }
-  
+
   /* 북마크 버튼 개선 */
   .bookmark-btn.bookmarked {
     color: #fbbf24;
     text-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
   }
-  
+
   .bookmark-btn:hover {
     background-color: rgba(251, 191, 36, 0.15);
   }
-  
+
   /* 액션 버튼 호버 개선 */
   .item-btn:hover {
     background-color: rgba(59, 130, 246, 0.15);
     color: #60a5fa;
     border-color: rgba(59, 130, 246, 0.3);
   }
-  
+
   /* 자동 저장 상태 표시 개선 */
   .auto-save-status {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   /* 복사 피드백 개선 */
   .copy-feedback {
     background: rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.3);
     color: #93c5fd;
   }
-  
+
   /* 삭제 확인 UI 개선 */
   .delete-confirm-group {
     background: rgba(239, 68, 68, 0.1);
     padding: 4px 8px;
     border-radius: 8px;
   }
-  
+
   .confirm-yes-btn {
     background-color: rgba(239, 68, 68, 0.2) !important;
     border-color: rgba(239, 68, 68, 0.3) !important;
   }
-  
+
   .confirm-yes-btn:hover {
     background-color: rgba(239, 68, 68, 0.35) !important;
   }
-  
+
   /* Primary 버튼 그림자 개선 */
   .primary-btn {
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35);
   }
-  
+
   .primary-btn:hover {
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
   }
-  
+
   /* Secondary 버튼 개선 */
   .secondary-btn {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
     color: var(--text-secondary);
   }
-  
+
   .secondary-btn:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.2);
     color: var(--text-primary);
   }
-  
+
   /* Danger 버튼 개선 */
   .danger-btn {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.25);
   }
-  
+
   .danger-btn:hover {
     background: rgba(239, 68, 68, 0.25);
     border-color: rgba(239, 68, 68, 0.35);
   }
-  
+
   /* 제목 복사 하이라이트 개선 */
   @keyframes titleHighlightDark {
     0% {
       background-color: rgba(59, 130, 246, 0.2);
       color: #93c5fd;
     }
+
     50% {
       background-color: rgba(59, 130, 246, 0.4);
       color: #bfdbfe;
     }
+
     100% {
       background-color: transparent;
       color: var(--text-primary);
     }
   }
-  
+
   .text-title.title-copied {
     animation: titleHighlightDark 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   /* 검색 옵션 체크박스 라벨 */
   .checkbox-label {
     color: var(--text-secondary);
   }
-  
+
   .checkbox-wrapper:hover .checkbox-label {
     color: #60a5fa;
   }
-  
+
   /* Import 결과 메시지 개선 */
   .import-result.success {
     background: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.25);
   }
-  
+
   .import-result.error {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.25);
   }
-  
+
   .import-result.info {
     background: rgba(59, 130, 246, 0.15);
     border-color: rgba(59, 130, 246, 0.25);
@@ -1844,12 +1978,19 @@ textarea.modern-input {
 }
 
 /* === 🎭 Final Polish === */
-button, input, textarea, .tab-btn, .item-btn {
+button,
+input,
+textarea,
+.tab-btn,
+.item-btn {
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
