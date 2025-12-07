@@ -1398,7 +1398,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     queryResultCache.clear();
     // 현재 검색 UI가 열려있다면 갱신 시도 (선택적)
     if (TextSaverContentState.bookmarkSearchUI && TextSaverContentState.lastQuerySent) {
-      handleSearch(TextSaverContentState.lastQuerySent);
+      debouncedSearchBookmarks(TextSaverContentState.lastQuerySent);
     }
   }
 });

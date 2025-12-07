@@ -296,10 +296,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (FORCE_PANEL_MODE || (!FORCE_POPUP_MODE && !window.location.search.includes('view=popup'))) {
     try {
       // 현재 창 ID를 background에 전달하기 위해 연결
-      chrome.windows.getCurrent((win) => {
-        if (win && win.id) {
+      chrome.windows.getCurrent({ populate: false }, (win) => {
+        if (chrome.runtime.lastError) {
+          console.warn('Text Saver: failed to get current window for sidepanel', chrome.runtime.lastError.message);
+          return;
+        }
+        if (!win || !win.id) {
+          console.warn('Text Saver: no windowId available for sidepanel connection');
+          return;
+        }
+        try {
           const port = chrome.runtime.connect({ name: 'sidepanel-open' });
           port.postMessage({ windowId: win.id });
+        } catch (err) {
+          console.warn('Text Saver: sidepanel port connection failed', err?.message || err);
         }
       });
     } catch (e) {

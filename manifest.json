@@ -1,6 +1,6 @@
 {
   "name": "Text Saver",
-  "version": "2.3.6",
+  "version": "2.6.6",
   "description": "Save text snippets with tags and easily access them when needed",
   "default_locale": "ko",
   "manifest_version": 3,
@@ -29,7 +29,12 @@
     "alarms",
     "scripting",
     "identity",
-    "sidePanel"
+    "sidePanel",
+    "windows"
+  ],
+  "host_permissions": [
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
   ],
   "side_panel": {
     "default_path": "popup.html?view=panel"
@@ -78,7 +83,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' https://accounts.google.com https://www.googleapis.com;",
     "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals;"
   }
 }

@@ -100,14 +100,14 @@ chrome.runtime.onInstalled.addListener(() => {
     // 단일 컨텍스트 메뉴 생성
     chrome.contextMenus.create({
       id: "saveSelectedTextWithUrlAndAutoTags",
-      title: "Text Saver로 선택 내용 저장",
+      title: "선택 내용 저장",
       contexts: ["selection"]
     });
     
     // 사이드 패널 열기 메뉴 추가
     chrome.contextMenus.create({
       id: "openSidePanel",
-      title: "Text Saver 사이드 패널 열기",
+      title: "사이드 패널 열기",
       contexts: ["all"]
     });
     
