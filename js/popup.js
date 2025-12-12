@@ -18,6 +18,8 @@ let autoSaveTimer = null;
 // 전역 변수 선언 (스코프 문제 해결)
 let autoCompleteToggle = null;
 let featureStatusText = null;
+let hoverPreviewToggle = null;
+let hoverPreviewStatusText = null;
 let inAppNotification = null;
 const detectedLocale = (chrome?.i18n?.getUILanguage?.() || navigator.language || 'ko').toLowerCase();
 const isKoreanLocale = detectedLocale.startsWith('ko');
@@ -352,6 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-complete toggle 관련 요소 (전역 변수 초기화)
   autoCompleteToggle = document.getElementById('autoCompleteToggle');
   featureStatusText = document.getElementById('featureStatusText');
+  hoverPreviewToggle = document.getElementById('hoverPreviewToggle');
+  hoverPreviewStatusText = document.getElementById('hoverPreviewStatusText');
   inAppNotification = document.getElementById('inAppNotification');
 
   // 자동 저장 UI 요소 추가
@@ -375,6 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Auto-complete 토글 초기화 및 이벤트 리스너
   initAutoCompleteToggle();
+  
+  // Hover Preview 토글 초기화 및 이벤트 리스너
+  initHoverPreviewToggle();
 
   // 탭 클릭 이벤트 리스너
   saveTabBtn.addEventListener('click', () => switchTab(saveTabBtn, saveTab));
@@ -1323,45 +1330,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 호버 시 내용 미리보기 설정 함수 (딜레이 적용으로 고도화)
   function setupHoverPreview(textItem, contentWrapper) {
-    let hoverTimer = null;
+    // 호버 미리보기 설정 확인
+    chrome.storage.sync.get(['hoverPreviewEnabled'], (result) => {
+      const enabled = result.hoverPreviewEnabled !== false; // 기본값: true
+      
+      // 비활성화된 경우 이벤트 리스너를 등록하지 않음
+      if (!enabled) return;
+      
+      let hoverTimer = null;
 
-    // 호버 시작 시
-    textItem.addEventListener('mouseenter', () => {
-      // 이미 펼쳐진 상태면 무시
-      if (textItem.classList.contains('expanded')) return;
+      // 호버 시작 시
+      textItem.addEventListener('mouseenter', () => {
+        // 이미 펼쳐진 상태면 무시
+        if (textItem.classList.contains('expanded')) return;
 
-      // 300ms 딜레이 후 펼침 (마우스가 스쳐 지나갈 때 번쩍거림 방지)
-      hoverTimer = setTimeout(() => {
-        // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
-        requestAnimationFrame(() => {
-          // 타이머 실행 시점에 다시 한 번 상태 확인
-          if (textItem.classList.contains('expanded')) return;
+        // 1000ms 딜레이 후 펼침 (마우스가 스쳐 지나갈 때 번쩍거림 방지)
+        hoverTimer = setTimeout(() => {
+          // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
+          requestAnimationFrame(() => {
+            // 타이머 실행 시점에 다시 한 번 상태 확인
+            if (textItem.classList.contains('expanded')) return;
 
-          const scrollHeight = contentWrapper.scrollHeight;
-          const computedStyle = getComputedStyle(contentWrapper);
-          const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
-          const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
-          const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
+            const scrollHeight = contentWrapper.scrollHeight;
+            const computedStyle = getComputedStyle(contentWrapper);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
+            const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
+            const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
 
-          // 실제 내용이 기본 높이보다 크면 동적으로 설정 (아래로만 펼쳐짐)
-          if (scrollHeight > minPreviewHeight) {
-            contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
-          }
-        });
-      }, 300);
-    });
+            // 실제 내용이 기본 높이보다 크면 동적으로 설정 (아래로만 펼쳐짐)
+            if (scrollHeight > minPreviewHeight) {
+              contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
+            }
+          });
+        }, 1000);
+      });
 
-    // 호버 종료 시 원래대로
-    textItem.addEventListener('mouseleave', () => {
-      // 딜레이 중 마우스가 나가면 펼침 취소
-      if (hoverTimer) {
-        clearTimeout(hoverTimer);
-        hoverTimer = null;
-      }
+      // 호버 종료 시 원래대로
+      textItem.addEventListener('mouseleave', () => {
+        // 딜레이 중 마우스가 나가면 펼침 취소
+        if (hoverTimer) {
+          clearTimeout(hoverTimer);
+          hoverTimer = null;
+        }
 
-      if (!textItem.classList.contains('expanded')) {
-        contentWrapper.style.maxHeight = ''; // CSS 기본값으로 복원
-      }
+        if (!textItem.classList.contains('expanded')) {
+          contentWrapper.style.maxHeight = ''; // CSS 기본값으로 복원
+        }
+      });
     });
   }
 
@@ -1502,6 +1517,46 @@ function updateFeatureStatus(enabled) {
   const disabledLabel = getLocaleMessage('feature_status_disabled', '비활성화됨');
   featureStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
   featureStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
+}
+
+// Hover Preview toggle 관련 함수들
+function initHoverPreviewToggle() {
+  if (!hoverPreviewToggle || !hoverPreviewStatusText) return;
+
+  // 초기 상태 로드
+  chrome.storage.sync.get(['hoverPreviewEnabled'], (result) => {
+    const enabled = result.hoverPreviewEnabled !== false; // 기본값: true
+    hoverPreviewToggle.checked = enabled;
+    updateHoverPreviewStatus(enabled);
+  });
+
+  // 토글 변경 이벤트 리스너
+  hoverPreviewToggle.addEventListener('change', function () {
+    const enabled = this.checked;
+
+    // Storage에 저장
+    chrome.storage.sync.set({ hoverPreviewEnabled: enabled });
+
+    // UI 상태 업데이트
+    updateHoverPreviewStatus(enabled);
+
+    // 시각적 피드백
+    showInAppNotification(
+      enabled
+        ? getLocaleMessage('hover_preview_enabled_toast', '호버 미리보기 기능이 활성화되었습니다')
+        : getLocaleMessage('hover_preview_disabled_toast', '호버 미리보기 기능이 비활성화되었습니다'),
+      enabled ? 'success' : 'info'
+    );
+  });
+}
+
+function updateHoverPreviewStatus(enabled) {
+  if (!hoverPreviewStatusText) return;
+  const prefix = getLocaleMessage('feature_status_prefix', '기능 상태:');
+  const enabledLabel = getLocaleMessage('feature_status_enabled', '활성화됨');
+  const disabledLabel = getLocaleMessage('feature_status_disabled', '비활성화됨');
+  hoverPreviewStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
+  hoverPreviewStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

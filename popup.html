@@ -111,6 +111,24 @@
     color: #666;
     line-height: 1.4;
   }
+
+  .setting-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: #888;
+    margin-left: 4px;
+  }
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .setting-info h4 {
+      color: #f7fafc;
+    }
+
+    .setting-hint {
+      color: #a0aec0;
+    }
+  }
   </style>
 </head>
 <body>
@@ -121,7 +139,7 @@
           <img src="icons/icon48.png" alt="Text Saver Logo" class="app-logo">
         </div>
         <div class="title-wrapper">
-          <h1>Text Saver <span class="version-badge">V2.6.6</span></h1>
+          <h1>Text Saver <span class="version-badge">V2.7.0</span></h1>
         </div>
       </div>
     </header>
@@ -241,15 +259,22 @@
           <div class="settings-card">
             <div class="setting-item">
               <div class="setting-info">
-                <h4>"//" 자동완성 기능</h4>
-                <p>입력창에서 //를 입력했을 때 저장된 텍스트 목록 표시</p>
-                <div class="feature-status">
-                  <span id="featureStatusText">기능 상태: 활성화됨</span>
-                  <kbd>Ctrl+Shift+T</kbd>
-                </div>
+                <h4>"//" 자동완성 기능 <span class="setting-hint">- 입력창에서 // 입력 시 목록 표시</span></h4>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="autoCompleteToggle" checked>
+                <span class="toggle-slider">
+                  <span class="toggle-handle"></span>
+                </span>
+              </label>
+            </div>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <h4>호버 미리보기 <span class="setting-hint">- 마우스 올리면 내용 자동 펼침</span></h4>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="hoverPreviewToggle" checked>
                 <span class="toggle-slider">
                   <span class="toggle-handle"></span>
                 </span>
