@@ -119,6 +119,12 @@
     margin-left: 4px;
   }
 
+  .setting-status {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #4a5568;
+  }
+
   /* Dark mode support */
   @media (prefers-color-scheme: dark) {
     .setting-info h4 {
@@ -127,6 +133,10 @@
 
     .setting-hint {
       color: #a0aec0;
+    }
+
+    .setting-status {
+      color: #cbd5f5;
     }
   }
   </style>
@@ -260,6 +270,7 @@
             <div class="setting-item">
               <div class="setting-info">
                 <h4>"//" 자동완성 기능 <span class="setting-hint">- 입력창에서 // 입력 시 목록 표시</span></h4>
+                <div class="setting-status" id="featureStatusText"></div>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="autoCompleteToggle" checked>
@@ -272,6 +283,7 @@
             <div class="setting-item">
               <div class="setting-info">
                 <h4>호버 미리보기 <span class="setting-hint">- 마우스 올리면 내용 자동 펼침</span></h4>
+                <div class="setting-status" id="hoverPreviewStatusText"></div>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="hoverPreviewToggle" checked>

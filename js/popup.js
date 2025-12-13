@@ -36,6 +36,7 @@ let savedTextsCache = null;
 let dataChanged = true;
 let searchDebounceTimer = null;
 const SEARCH_DEBOUNCE_DELAY = 250;
+let hoverPreviewEnabled = true; // 호버 미리보기 토글 상태 캐시
 
 // 전역 안전장치: 외부 리스너에서 참조 시 함수 미정의 에러 방지
 if (typeof window !== 'undefined') {
@@ -180,9 +181,15 @@ function applyLocaleText() {
     }
   });
 
-  const statusEl = document.getElementById('featureStatusText');
-  if (statusEl) {
-    statusEl.textContent = `${getLocaleMessage('feature_status_prefix', '기능 상태:')} ${getLocaleMessage('feature_status_enabled', '활성화됨')}`;
+  // Initialize toggle status texts
+  const autoCompleteStatusEl = document.getElementById('featureStatusText');
+  if (autoCompleteStatusEl) {
+    autoCompleteStatusEl.textContent = `${getLocaleMessage('feature_status_prefix', '기능 상태:')} ${getLocaleMessage('feature_status_enabled', '활성화됨')}`;
+  }
+  
+  const hoverPreviewStatusEl = document.getElementById('hoverPreviewStatusText');
+  if (hoverPreviewStatusEl) {
+    hoverPreviewStatusEl.textContent = `${getLocaleMessage('feature_status_prefix', '기능 상태:')} ${getLocaleMessage('feature_status_enabled', '활성화됨')}`;
   }
 }
 
@@ -1330,53 +1337,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 호버 시 내용 미리보기 설정 함수 (딜레이 적용으로 고도화)
   function setupHoverPreview(textItem, contentWrapper) {
-    // 호버 미리보기 설정 확인
-    chrome.storage.sync.get(['hoverPreviewEnabled'], (result) => {
-      const enabled = result.hoverPreviewEnabled !== false; // 기본값: true
-      
-      // 비활성화된 경우 이벤트 리스너를 등록하지 않음
-      if (!enabled) return;
-      
-      let hoverTimer = null;
+    let hoverTimer = null;
 
-      // 호버 시작 시
-      textItem.addEventListener('mouseenter', () => {
-        // 이미 펼쳐진 상태면 무시
-        if (textItem.classList.contains('expanded')) return;
+    // 호버 시작 시
+    textItem.addEventListener('mouseenter', () => {
+      if (!hoverPreviewEnabled) return;
+      if (textItem.classList.contains('expanded')) return;
 
-        // 1000ms 딜레이 후 펼침 (마우스가 스쳐 지나갈 때 번쩍거림 방지)
-        hoverTimer = setTimeout(() => {
-          // 실제 내용 높이 계산 (DOM에 추가된 후에만 정확함)
-          requestAnimationFrame(() => {
-            // 타이머 실행 시점에 다시 한 번 상태 확인
-            if (textItem.classList.contains('expanded')) return;
+      hoverTimer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (textItem.classList.contains('expanded')) return;
 
-            const scrollHeight = contentWrapper.scrollHeight;
-            const computedStyle = getComputedStyle(contentWrapper);
-            const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16; // 기본 line-height
-            const minPreviewHeight = 4.5 * lineHeight; // 기본 높이 (4.5em)
-            const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight); // 최대 15줄, 여유 공간 추가
+          const scrollHeight = contentWrapper.scrollHeight;
+          const computedStyle = getComputedStyle(contentWrapper);
+          const lineHeight = parseFloat(computedStyle.lineHeight) || 1.5 * 0.85 * 16;
+          const minPreviewHeight = 4.5 * lineHeight;
+          const maxPreviewHeight = Math.min(scrollHeight + 10, 15 * lineHeight);
 
-            // 실제 내용이 기본 높이보다 크면 동적으로 설정 (아래로만 펼쳐짐)
-            if (scrollHeight > minPreviewHeight) {
-              contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
-            }
-          });
-        }, 1000);
-      });
+          if (scrollHeight > minPreviewHeight) {
+            contentWrapper.style.maxHeight = `${maxPreviewHeight}px`;
+          }
+        });
+      }, 1000);
+    });
 
-      // 호버 종료 시 원래대로
-      textItem.addEventListener('mouseleave', () => {
-        // 딜레이 중 마우스가 나가면 펼침 취소
-        if (hoverTimer) {
-          clearTimeout(hoverTimer);
-          hoverTimer = null;
-        }
+    // 호버 종료 시 원래대로
+    textItem.addEventListener('mouseleave', () => {
+      if (hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
 
-        if (!textItem.classList.contains('expanded')) {
-          contentWrapper.style.maxHeight = ''; // CSS 기본값으로 복원
-        }
-      });
+      if (!textItem.classList.contains('expanded')) {
+        contentWrapper.style.maxHeight = '';
+      }
     });
   }
 
@@ -1455,8 +1449,10 @@ function updateAutoSaveStatus(status, duration = 2000) {
 }
 
 // Auto-complete toggle 관련 함수들
+// Note: 자동완성은 content script와 background script에 메시지를 보내서
+// 페이지 외부 알림(toast)과 배지를 표시합니다.
 function initAutoCompleteToggle() {
-  if (!autoCompleteToggle || !featureStatusText) return;
+  if (!autoCompleteToggle) return;
 
   // 초기 상태 로드
   chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
@@ -1510,22 +1506,30 @@ function initAutoCompleteToggle() {
   });
 }
 
-function updateFeatureStatus(enabled) {
-  if (!featureStatusText) return;
+// 공통 토글 상태 업데이트 함수 (재사용 가능)
+function updateToggleStatus(statusElement, enabled) {
+  if (!statusElement) return;
   const prefix = getLocaleMessage('feature_status_prefix', '기능 상태:');
   const enabledLabel = getLocaleMessage('feature_status_enabled', '활성화됨');
   const disabledLabel = getLocaleMessage('feature_status_disabled', '비활성화됨');
-  featureStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
-  featureStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
+  statusElement.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
+  statusElement.style.color = enabled ? '#4CAF50' : '#f44336';
+}
+
+function updateFeatureStatus(enabled) {
+  updateToggleStatus(featureStatusText, enabled);
 }
 
 // Hover Preview toggle 관련 함수들
+// Note: 호버 미리보기는 팝업 내부 전용 기능으로, 전역 캐시(hoverPreviewEnabled)를
+// 사용해 setupHoverPreview()에서 실시간 상태를 체크합니다. 인앱 알림만 표시합니다.
 function initHoverPreviewToggle() {
-  if (!hoverPreviewToggle || !hoverPreviewStatusText) return;
+  if (!hoverPreviewToggle) return;
 
   // 초기 상태 로드
   chrome.storage.sync.get(['hoverPreviewEnabled'], (result) => {
     const enabled = result.hoverPreviewEnabled !== false; // 기본값: true
+    hoverPreviewEnabled = enabled; // 전역 캐시 업데이트
     hoverPreviewToggle.checked = enabled;
     updateHoverPreviewStatus(enabled);
   });
@@ -1533,6 +1537,7 @@ function initHoverPreviewToggle() {
   // 토글 변경 이벤트 리스너
   hoverPreviewToggle.addEventListener('change', function () {
     const enabled = this.checked;
+    hoverPreviewEnabled = enabled; // 전역 캐시 즉시 업데이트
 
     // Storage에 저장
     chrome.storage.sync.set({ hoverPreviewEnabled: enabled });
@@ -1551,12 +1556,7 @@ function initHoverPreviewToggle() {
 }
 
 function updateHoverPreviewStatus(enabled) {
-  if (!hoverPreviewStatusText) return;
-  const prefix = getLocaleMessage('feature_status_prefix', '기능 상태:');
-  const enabledLabel = getLocaleMessage('feature_status_enabled', '활성화됨');
-  const disabledLabel = getLocaleMessage('feature_status_disabled', '비활성화됨');
-  hoverPreviewStatusText.textContent = `${prefix} ${enabled ? enabledLabel : disabledLabel}`;
-  hoverPreviewStatusText.style.color = enabled ? '#4CAF50' : '#f44336';
+  updateToggleStatus(hoverPreviewStatusText, enabled);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
