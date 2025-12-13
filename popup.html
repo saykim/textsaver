@@ -10,136 +10,6 @@
   <link rel="stylesheet" href="css/popup.css">
   <!-- 보안: 외부 CDN 제거, 로컬 리소스 사용 -->
   <!-- 외부 폰트 및 아이콘 라이브러리 제거 -->
-  <style>
-  /* Toggle Switch Styles */
-  .toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-    flex-shrink: 0;
-  }
-
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #ecf0f1;
-    border: 1px solid #bdc3c7;
-    border-radius: 24px;
-    transition: all 0.3s ease;
-  }
-
-  .toggle-handle {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 2px;
-    bottom: 2px;
-    background: #ffffff;
-    border: 1px solid #bdc3c7;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-  }
-
-  .toggle-switch input:checked + .toggle-slider {
-    background: #2ecc71;
-    border-color: #2ecc71;
-  }
-
-  .toggle-switch input:checked + .toggle-slider .toggle-handle {
-    transform: translateX(24px);
-    background: #ffffff;
-    border-color: #2ecc71;
-  }
-
-  .toggle-switch:hover .toggle-slider {
-    border-color: #95a5a6;
-  }
-
-  .feature-status {
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-    color: #666;
-  }
-
-  .feature-status kbd {
-    background: #ecf0f1;
-    border: 1px solid #bdc3c7;
-    border-radius: 2px;
-    padding: 2px 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: #2c3e50;
-  }
-
-  /* Setting item layout adjustment for toggle */
-  .settings-card .setting-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .setting-info {
-    flex: 1;
-  }
-
-  .setting-info h4 {
-    margin: 0 0 4px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-  }
-
-  .setting-info p {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
-    line-height: 1.4;
-  }
-
-  .setting-hint {
-    font-size: 11px;
-    font-weight: 400;
-    color: #888;
-    margin-left: 4px;
-  }
-
-  .setting-status {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #4a5568;
-  }
-
-  /* Dark mode support */
-  @media (prefers-color-scheme: dark) {
-    .setting-info h4 {
-      color: #f7fafc;
-    }
-
-    .setting-hint {
-      color: #a0aec0;
-    }
-
-    .setting-status {
-      color: #cbd5f5;
-    }
-  }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -318,7 +188,7 @@
                   📤
                   <span>가져오기</span>
                 </button>
-                <input type="file" id="importInput" accept=".json" style="display: none;">
+                <input type="file" id="importInput" class="hidden-file-input" accept=".json">
               </div>
             </div>
 
@@ -348,30 +218,30 @@
           </div>
 
           <!-- Google Drive Section -->
-          <div class="settings-card" style="margin-top: 16px; border-left: 4px solid #4285F4;">
+          <div class="settings-card google-drive-card">
             <div class="setting-item">
               <div class="setting-info">
-                <h4 style="display: flex; align-items: center; gap: 6px;">
+                <h4 class="drive-title">
                   <svg width="16" height="16" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#ea4335"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#fbbc04"/><path d="m42 63.05 13.75 23.8c1.55 0 3.1-.4 4.5-1.2l25.4-44c.8-1.35 1.2-2.9 1.2-4.5h-27.5z" fill="#34a853"/><path d="m59.75 29.05c0-1.55-.4-3.1-1.2-4.5l-13.75-23.8c-1.4-.8-2.9-1.2-4.5-1.2h-27.5l13.75 23.8z" fill="#4285f4"/></svg>
                   구글 드라이브 백업
                 </h4>
                 <p>구글 드라이브에 데이터를 안전하게 백업하고 동기화하세요</p>
                 <div class="feature-status" id="driveStatus">
-                  <span class="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #ccc; display: inline-block;"></span>
+                  <span class="status-dot"></span>
                   <span id="driveStatusText">연결되지 않음</span>
                 </div>
               </div>
-              <button id="driveConnectBtn" class="secondary-btn" style="min-width: 80px;">
+              <button id="driveConnectBtn" class="secondary-btn drive-connect-btn">
                 연결하기
               </button>
             </div>
             
-            <div id="driveActions" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; gap: 8px; justify-content: flex-end;">
-              <button id="driveBackupBtn" class="secondary-btn" style="font-size: 12px; padding: 4px 10px;">
-                <span style="margin-right: 4px;">☁️</span> 지금 백업
+            <div id="driveActions" class="drive-actions">
+              <button id="driveBackupBtn" class="secondary-btn drive-action-btn">
+                <span class="btn-icon">☁️</span> 지금 백업
               </button>
-              <button id="driveRestoreBtn" class="secondary-btn" style="font-size: 12px; padding: 4px 10px;">
-                <span style="margin-right: 4px;">📥</span> 복원하기
+              <button id="driveRestoreBtn" class="secondary-btn drive-action-btn">
+                <span class="btn-icon">📥</span> 복원하기
               </button>
             </div>
           </div>

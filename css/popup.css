@@ -2033,3 +2033,183 @@ textarea,
 .status-text {
   transition: var(--transition-fast);
 }
+
+/* =========================================================
+   popup.html 인라인 스타일 제거분 (기존 <style> / style="" 이동)
+   NOTE: 기존에는 popup.html 내부 <style>가 popup.css 뒤에서 덮어쓰는 구조였으므로,
+         동일 동작을 보장하기 위해 파일 맨 아래에 배치합니다.
+   ========================================================= */
+
+.hidden-file-input {
+  display: none;
+}
+
+.google-drive-card {
+  margin-top: 16px;
+  border-left: 4px solid #4285F4;
+}
+
+.drive-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drive-connect-btn {
+  min-width: 80px;
+}
+
+.drive-actions {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.drive-action-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.btn-icon {
+  margin-right: 4px;
+}
+
+#driveStatus .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+  display: inline-block;
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ecf0f1;
+  border: 1px solid #bdc3c7;
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.toggle-handle {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: #ffffff;
+  border: 1px solid #bdc3c7;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #2ecc71;
+  border-color: #2ecc71;
+}
+
+.toggle-switch input:checked + .toggle-slider .toggle-handle {
+  transform: translateX(24px);
+  background: #ffffff;
+  border-color: #2ecc71;
+}
+
+.toggle-switch:hover .toggle-slider {
+  border-color: #95a5a6;
+}
+
+.feature-status {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.feature-status kbd {
+  background: #ecf0f1;
+  border: 1px solid #bdc3c7;
+  border-radius: 2px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #2c3e50;
+}
+
+/* Setting item layout adjustment for toggle */
+.settings-card .setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.setting-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.setting-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+  margin-left: 4px;
+}
+
+.setting-status {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #4a5568;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .setting-info h4 {
+    color: #f7fafc;
+  }
+
+  .setting-hint {
+    color: #a0aec0;
+  }
+
+  .setting-status {
+    color: #cbd5f5;
+  }
+}

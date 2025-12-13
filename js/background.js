@@ -143,37 +143,15 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Service Worker 활성 상태 유지를 위한 keep-alive 로직 (Alarms API 사용으로 개선)
 chrome.runtime.onStartup.addListener(() => {
-  setupKeepAlive();
-
   chrome.storage.sync.get(['autoCompleteEnabled'], (result) => {
     const enabled = result.autoCompleteEnabled !== false;
     updateExtensionIcon(enabled);
   });
 });
 
-// Keep-alive 설정 (메모리 효율적인 Alarms API 사용)
-function setupKeepAlive() {
-  // 기존 알람이 있으면 먼저 제거
-  chrome.alarms.clear('keepAlive', () => {
-    // 5분마다 알람 생성 (setInterval보다 효율적)
-    chrome.alarms.create('keepAlive', {
-      periodInMinutes: 5
-    });
-  });
-}
-
-// 알람 이벤트 리스너
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'keepAlive') {
-    // 간단한 storage 체크로 Service Worker 유지
-    chrome.storage.local.get(['keepAlive'], () => {
-      // no-op: 호출 자체로 Service Worker 유지
-    });
-  }
-});
-
-// 확장 프로그램 시작 시 keep-alive 활성화
-setupKeepAlive();
+// NOTE:
+// MV3 Service Worker는 이벤트 기반으로 깨워집니다.
+// 과거 keep-alive(alarms 기반)는 중복/불필요 동작 및 정책 리스크가 있어 제거했습니다.
 
 // Side Panel 상태 추적을 위한 변수
 const sidePanelState = {}; // windowId -> boolean
@@ -413,7 +391,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       // 브라우저 알림 표시
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: '../icons/icon48.png',
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
         title: 'Text Saver',
         message: '선택한 텍스트와 URL이 자동 태그와 함께 저장되었습니다!'
       });

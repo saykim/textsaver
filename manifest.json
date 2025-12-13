@@ -26,8 +26,6 @@
     "contextMenus",
     "notifications",
     "activeTab",
-    "alarms",
-    "scripting",
     "identity",
     "sidePanel",
     "windows"

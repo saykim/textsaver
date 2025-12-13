@@ -1,3 +1,72 @@
+function createOAuthState() {
+  try {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  } catch (_) {
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+}
+
+async function readGoogleApiError(response) {
+  try {
+    const text = await response.text();
+    if (!text) {
+      return `HTTP ${response.status}`;
+    }
+    try {
+      const data = JSON.parse(text);
+      return (
+        data?.error?.message ||
+        data?.error_description ||
+        data?.error ||
+        text ||
+        `HTTP ${response.status}`
+      );
+    } catch (_) {
+      return text;
+    }
+  } catch (_) {
+    return `HTTP ${response?.status ?? 'unknown'}`;
+  }
+}
+
+function removeCachedAuthTokenSafe(token) {
+  return new Promise((resolve) => {
+    try {
+      if (!token) return resolve();
+      chrome.identity.removeCachedAuthToken({ token }, () => resolve());
+    } catch (_) {
+      resolve();
+    }
+  });
+}
+
+function buildDriveUploadMultipart(existingFile, fileBlob) {
+  const form = new FormData();
+
+  if (existingFile?.id) {
+    const url = `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`;
+    const method = 'PATCH';
+    // 업데이트에서는 name 변경이 불필요하므로 mimeType만 전달
+    form.append(
+      'metadata',
+      new Blob([JSON.stringify({ mimeType: 'application/json' })], { type: 'application/json' })
+    );
+    form.append('file', fileBlob);
+    return { url, method, form };
+  }
+
+  const url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+  const method = 'POST';
+  form.append(
+    'metadata',
+    new Blob([JSON.stringify({ name: GoogleDrive.BACKUP_FILENAME, mimeType: 'application/json' })], { type: 'application/json' })
+  );
+  form.append('file', fileBlob);
+  return { url, method, form };
+}
+
 const GoogleDrive = {
   // 백업 파일명
   BACKUP_FILENAME: 'text_saver_backup.json',
@@ -32,12 +101,15 @@ const GoogleDrive = {
       const clientId = GoogleDrive.EDGE_CLIENT_ID;
       const scopes = manifest.oauth2.scopes.join(' ');
       const redirectUri = chrome.identity.getRedirectURL();
+      const state = createOAuthState();
       
       const authUrl = `https://accounts.google.com/o/oauth2/auth` + 
                       `?client_id=${clientId}` + 
                       `&response_type=token` + 
                       `&redirect_uri=${encodeURIComponent(redirectUri)}` + 
-                      `&scope=${encodeURIComponent(scopes)}`;
+                      `&scope=${encodeURIComponent(scopes)}` +
+                      `&include_granted_scopes=true` +
+                      `&state=${encodeURIComponent(state)}`;
 
       chrome.identity.launchWebAuthFlow({
         url: authUrl,
@@ -50,6 +122,17 @@ const GoogleDrive = {
         } else {
           // URL에서 토큰 추출
           const params = new URLSearchParams(new URL(redirectUrl).hash.substring(1));
+          const oauthError = params.get('error') || params.get('error_description');
+          if (oauthError) {
+            reject(new Error(String(oauthError)));
+            return;
+          }
+
+          const returnedState = params.get('state');
+          if (returnedState && returnedState !== state) {
+            reject(new Error('OAuth state mismatch'));
+            return;
+          }
           const token = params.get('access_token');
           if (token) {
             resolve(token);
@@ -82,68 +165,74 @@ const GoogleDrive = {
     const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
+    if (!response.ok) {
+      const message = await readGoogleApiError(response);
+      throw new Error(`Drive list failed: ${message}`);
+    }
     const data = await response.json();
     return data.files && data.files.length > 0 ? data.files[0] : null;
   },
 
   // 파일 업로드 (백업)
   uploadFile: async (data) => {
-    const token = await GoogleDrive.getAuthToken(true);
     const fileContent = JSON.stringify(data);
-    const file = new Blob([fileContent], { type: 'application/json' });
-    const metadata = {
-      name: GoogleDrive.BACKUP_FILENAME,
-      mimeType: 'application/json'
+    const fileBlob = new Blob([fileContent], { type: 'application/json' });
+
+    const doUpload = async (token) => {
+      const existingFile = await GoogleDrive.findBackupFile(token);
+      const { url, method, form } = buildDriveUploadMultipart(existingFile, fileBlob);
+      return fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
     };
 
-    const existingFile = await GoogleDrive.findBackupFile(token);
-    
-    let url, method;
-    const form = new FormData();
+    let token = await GoogleDrive.getAuthToken(true);
+    let response = await doUpload(token);
 
-    if (existingFile) {
-      // 기존 파일 업데이트 (PATCH)
-      url = `https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`;
-      method = 'PATCH';
-      // 메타데이터는 업데이트 시 필요 없을 수 있으나, 명시적으로 보냄
-      form.append('metadata', new Blob([JSON.stringify({ mimeType: 'application/json' })], { type: 'application/json' }));
-    } else {
-      // 새 파일 생성 (POST)
-      url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-      method = 'POST';
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    // 토큰 만료/권한 문제인 경우 1회 재시도
+    if (!response.ok && (response.status === 401 || response.status === 403)) {
+      await removeCachedAuthTokenSafe(token);
+      token = await GoogleDrive.getAuthToken(true);
+      response = await doUpload(token);
     }
-    
-    form.append('file', file);
-
-    const response = await fetch(url, {
-      method: method,
-      headers: { Authorization: `Bearer ${token}` },
-      body: form
-    });
 
     if (!response.ok) {
-      throw new Error('Upload failed');
+      const message = await readGoogleApiError(response);
+      throw new Error(`Upload failed: ${message}`);
     }
+
     return await response.json();
   },
 
   // 파일 다운로드 (복원)
   downloadFile: async () => {
-    const token = await GoogleDrive.getAuthToken(true);
-    const existingFile = await GoogleDrive.findBackupFile(token);
+    const doDownload = async (token) => {
+      const existingFile = await GoogleDrive.findBackupFile(token);
+      if (!existingFile) {
+        throw new Error('No backup file found');
+      }
+      return fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    };
 
-    if (!existingFile) {
-      throw new Error('No backup file found');
+    let token = await GoogleDrive.getAuthToken(true);
+    let response = await doDownload(token);
+
+    // 토큰 만료/권한 문제인 경우 1회 재시도
+    if (!response.ok && (response.status === 401 || response.status === 403)) {
+      await removeCachedAuthTokenSafe(token);
+      token = await GoogleDrive.getAuthToken(true);
+      response = await doDownload(token);
     }
-
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
 
     if (!response.ok) {
-      throw new Error('Download failed');
+      const message = await readGoogleApiError(response);
+      throw new Error(`Download failed: ${message}`);
     }
+
     return await response.json();
   },
 
@@ -160,7 +249,9 @@ const GoogleDrive = {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        return null;
+      }
       return await response.json();
     } catch (error) {
       console.error('Error getting cloud backup info:', error);

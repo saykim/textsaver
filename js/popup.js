@@ -1650,7 +1650,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
               if (!confirm(confirmMsg)) {
                 driveBackupBtn.disabled = false;
-                driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
+                driveBackupBtn.innerHTML = '<span class="btn-icon">☁️</span> 지금 백업';
                 showInAppNotification('백업이 취소되었습니다.', 'info');
                 return;
               }
@@ -1674,7 +1674,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showInAppNotification('백업에 실패했습니다.', 'error');
         } finally {
           driveBackupBtn.disabled = false;
-          driveBackupBtn.innerHTML = '<span style="margin-right: 4px;">☁️</span> 지금 백업';
+          driveBackupBtn.innerHTML = '<span class="btn-icon">☁️</span> 지금 백업';
         }
       });
     });
@@ -1712,7 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .finally(() => {
           driveRestoreBtn.disabled = false;
-          driveRestoreBtn.innerHTML = '<span style="margin-right: 4px;">📥</span> 복원하기';
+          driveRestoreBtn.innerHTML = '<span class="btn-icon">📥</span> 복원하기';
         });
     });
   }

@@ -29,16 +29,6 @@ function compareByRecency(a, b) {
   return getItemTimestamp(b) - getItemTimestamp(a);
 }
 
-/**
- * Sorts an array of items by recency (newest first).
- * @param {Array} items - Array of items to sort.
- * @returns {Array} Sorted array.
- */
-function sortByRecency(items) {
-  if (!Array.isArray(items)) return [];
-  return items.sort(compareByRecency);
-}
-
 // --- Text Manipulation ---
 
 /**
